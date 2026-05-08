@@ -51,19 +51,30 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchProducts = async (searchValue = "") => {
+  const fetchProducts = async (searchValue = "", navId = null) => {
     try {
       setLoading(true);
       setError("");
-      const res = await api.get(`/product/filter?search=${search}`);
+
+      const params = {
+        search: searchValue,
+      };
+
+      if (navId) {
+        params.nav = navId;
+      }
+
+      const res = await api.get("/product/filter", {
+        params,
+      });
+
       setProducts(res.data.products);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to fetch Products");
+      setError(err.response?.data?.message || "Failed to fetch products");
     } finally {
       setLoading(false);
     }
   };
-
   //add to cart
   const addtocart = async (productId) => {
     try {
@@ -95,7 +106,7 @@ export default function Home() {
 
   useEffect(() => {
     const delay = setTimeout(() => {
-      fetchProducts();
+      fetchProducts(search, active);
     }, 500);
     return () => clearTimeout(delay);
   }, [search]);
@@ -143,20 +154,24 @@ export default function Home() {
               <div className="hidden lg:flex items-center gap-8">
                 {navItems.map((link) => (
                   <div key={link.title} className="relative group">
-                    <Link
-                      to={link.path}
-                      onClick={() => setActive(link.title)}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActive(link._id);
+                        setCurrentPage(1);
+                        fetchProducts(search, link._id);
+                      }}
                       className="
-        relative
-        text-[#F5E6D3]
-        hover:text-[#C2A878]
-        transition-colors duration-300
-        font-medium
-        pb-2
-      "
+    relative
+    text-[#F5E6D3]
+    hover:text-[#C2A878]
+    transition-colors duration-300
+    font-medium
+    pb-2
+  "
                     >
                       {link.title}
-                    </Link>
+                    </button>
 
                     {/* Hover underline */}
                     <span
@@ -177,7 +192,7 @@ export default function Home() {
                     />
 
                     {/* Active underline */}
-                    {active === link.title && (
+                    {active === link._id && (
                       <motion.div
                         layoutId="active-navbar-indicator"
                         className="
@@ -356,13 +371,17 @@ export default function Home() {
               >
                 <div className="flex flex-col gap-4">
                   {navItems.map((link) => (
-                    <Link
-                      key={link.title}
-                      to={link.path}
+                    <button
+                      onClick={() => {
+                        setActive(link._id);
+                        setCurrentPage(1);
+                        fetchProducts(search, link._id);
+                        setMobileOpen(false);
+                      }}
                       className="text-[#F5E6D3] px-2 py-2 hover:text-[#C2A878]"
                     >
                       {link.title}
-                    </Link>
+                    </button>
                   ))}
                 </div>
               </motion.div>
