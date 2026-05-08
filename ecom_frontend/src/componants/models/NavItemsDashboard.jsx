@@ -14,9 +14,9 @@ export default function NavItemsDashboard() {
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({
     title: "",
-    path: "",
-    imgurl: "",
+    categories: [],
   });
+  const [categories, setCategories] = useState([]);
 
   const { user } = useAuth();
 
@@ -29,6 +29,15 @@ export default function NavItemsDashboard() {
       setError(err.response?.data?.message || "Failed to fetch nav items");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await api.get("/cat");
+      setCategories(res.data);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -50,13 +59,12 @@ export default function NavItemsDashboard() {
     setEditId(item._id);
     setEditData({
       title: item.title,
-      path: item.path,
-      imgurl: item.imgurl,
+      categories: item.categories.map((cat) => cat._id),
     });
   };
 
   const handleUpdate = async (id) => {
-    if (!editData.title || !editData.path) {
+    if (!editData.title || editData.categories.length === 0) {
       alert("Please fill all required fields");
       return;
     }
@@ -84,6 +92,7 @@ export default function NavItemsDashboard() {
 
   useEffect(() => {
     fetchItems();
+    fetchCategories();
   }, []);
 
   const totalPages = Math.ceil(navItems.length / itemsPerPage);
@@ -139,8 +148,7 @@ export default function NavItemsDashboard() {
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr className="text-left text-slate-500">
                     <th className="px-6 py-4 font-medium">Title</th>
-                    <th className="px-6 py-4 font-medium">Path</th>
-                    <th className="px-6 py-4 font-medium">Icon</th>
+                    <th className="px-6 py-4 font-medium">Categories</th>
                     <th className="px-6 py-4 text-right font-medium">
                       Actions
                     </th>
@@ -172,51 +180,57 @@ export default function NavItemsDashboard() {
                           </span>
                         )}
                       </td>
-
-                      {/* Path */}
+                      {/* categories */}
                       <td className="px-6 py-4">
                         {editId === item._id ? (
-                          <input
-                            value={editData.path}
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                path: e.target.value,
-                              })
-                            }
-                            className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-slate-300"
-                          />
-                        ) : (
-                          <span className="text-slate-600">{item.path}</span>
-                        )}
-                      </td>
+                          <div className="space-y-2">
+                            {categories.map((category) => (
+                              <label
+                                key={category._id}
+                                className="flex items-center gap-2"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={editData.categories.includes(
+                                    category._id,
+                                  )}
+                                  onChange={() => {
+                                    const exists = editData.categories.includes(
+                                      category._id,
+                                    );
 
-                      {/* Icon */}
-                      <td className="px-6 py-4">
-                        {editId === item._id ? (
-                          <input
-                            value={editData.imgurl}
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                imgurl: e.target.value,
-                              })
-                            }
-                            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-slate-300"
-                          />
+                                    if (exists) {
+                                      setEditData({
+                                        ...editData,
+                                        categories: editData.categories.filter(
+                                          (id) => id !== category._id,
+                                        ),
+                                      });
+                                    } else {
+                                      setEditData({
+                                        ...editData,
+                                        categories: [
+                                          ...editData.categories,
+                                          category._id,
+                                        ],
+                                      });
+                                    }
+                                  }}
+                                />
+                                {category.title}
+                              </label>
+                            ))}
+                          </div>
                         ) : (
-                          <div className="flex items-center gap-3">
-                            {item.imgurl ? (
-                              <img
-                                src={item.imgurl}
-                                alt={item.title}
-                                className="w-10 h-10 rounded-xl object-cover border border-slate-200"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
-                                —
-                              </div>
-                            )}
+                          <div className="flex flex-wrap gap-2">
+                            {item.categories?.map((category) => (
+                              <span
+                                key={category._id}
+                                className="px-3 py-1 rounded-full bg-slate-100 text-xs"
+                              >
+                                {category.title}
+                              </span>
+                            ))}
                           </div>
                         )}
                       </td>
