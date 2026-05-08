@@ -18,6 +18,7 @@ export default function Vendor() {
     brand: "",
     discountPercentage: "",
     category: "",
+    categories: [],
     image: "",
   });
   // useEffect(() => {

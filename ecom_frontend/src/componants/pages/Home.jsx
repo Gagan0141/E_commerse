@@ -11,7 +11,7 @@ import Crousel from "../navbar/Crousel";
 export default function Home() {
   const { user, users, logout, refresh } = useAuth();
 
-  const [active, setActive] = useState("For You");
+  const [active, setActive] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);

@@ -12,24 +12,37 @@ import VendorsDashboard from "../models/VendorsDashboard";
 
 export default function Admin() {
   const [activeModal, setactiveModal] = useState(null);
-  const [activeTab, setActiveTab] = useState("products");
+  const [activeTab, setActiveTab] = useState("Nav control");
   const [loading, setloading] = useState(false);
 
   const { user, logout } = useAuth();
 
   const [form, setForm] = useState({
     title: "",
-    imgurl: "",
-    path: "",
     description: "",
     price: "",
     stock: "",
     brand: "",
     discountPercentage: "",
     category: "",
+    categories: [],
     image: "",
   });
+  //nav start
+  const [categories, setCategories] = useState([]);
 
+  const fetchCategories = async () => {
+    try {
+      const res = await api.get("/cat");
+      setCategories(res.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setloading(true);
@@ -70,9 +83,9 @@ export default function Admin() {
   const opennavModal = () => {
     setForm({
       title: "",
-      imgurl: "",
-      path: "",
+      categories: [],
     });
+
     setloading(false);
     setactiveModal("nav");
   };
@@ -407,6 +420,7 @@ export default function Admin() {
         setForm={setForm}
         handleSubmit={handleSubmit}
         loading={loading}
+        categories={categories}
       />
 
       <CategoryModal

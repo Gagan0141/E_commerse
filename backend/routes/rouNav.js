@@ -1,5 +1,4 @@
 const express = require("express");
-const navModel = require("../models/modNav");
 const {
   createnav,
   getnavitems,
@@ -11,16 +10,16 @@ const authRoles = require("../middleware/authRole");
 
 const router = express.Router();
 
-// Create new nav items
+// create nav
 router.post("/add", vertoken, authRoles("Admin"), createnav);
 
-// Get all nav items
+// get all nav
 router.get("/", getnavitems);
 
-// update nav items
+// update nav
 router.patch("/:id", vertoken, authRoles("Admin"), updatenav);
 
-// delete nav items
+// delete nav
 router.delete("/:id", vertoken, authRoles("Admin"), deletenav);
 
 module.exports = router;

@@ -1,12 +1,37 @@
 const mongoose = require("mongoose");
 
-const navSchema = mongoose.Schema(
+const navSchema = new mongoose.Schema(
   {
-    title: { type: String },
-    imgurl: { type: String },
-    path: { type: String },
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    // imgurl: {
+    //   type: String,
+    //   default: "",
+    // },
+
+    categories: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Allcategories",
+        required: true,
+      },
+    ],
+
+    // isActive: {
+    //   type: Boolean,
+    //   default: true,
+    // },
+
+    // order: {
+    //   type: Number,
+    //   default: 0,
+    // },
   },
-  { timestamp: true },
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("nav", navSchema);
