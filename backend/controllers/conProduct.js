@@ -226,6 +226,61 @@ const addreview = async (req, res) => {
   }
 };
 
+//search
+const getProducts = async (req, res) => {
+  try {
+    const {
+      search = "",
+      sort = "createdAt",
+      order = "desc",
+      category,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    let filter = {};
+
+    // Search by title, brand, description
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { brand: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Filter by category
+    if (category) {
+      filter.category = category;
+    }
+
+    // Sorting
+    const sortOption = {
+      [sort]: order === "asc" ? 1 : -1,
+    };
+
+    const products = await modProducts
+      .find(filter)
+      .populate("category")
+      .sort(sortOption)
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    const total = await modProducts.countDocuments(filter);
+
+    res.status(200).json({
+      products,
+      total,
+      currentPage: Number(page),
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createproduct,
   getallproducts,
@@ -236,4 +291,5 @@ module.exports = {
   getproductsbyseller,
   getreviewsbyproductid,
   addreview,
+  getProducts,
 };
