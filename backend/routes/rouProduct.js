@@ -15,21 +15,27 @@ const {
   getproductsbyseller,
   getreviewsbyproductid,
   addreview,
+  getProducts,
 } = require("../controllers/conProduct");
 
-router.post("/add", vertoken, authRoles("Vendor","Admin"), createproduct);
+router.post("/add", vertoken, authRoles("Vendor", "Admin"), createproduct);
+
+// search first
+router.get("/filter", getProducts);
 
 router.get("/", getallproducts);
-
-router.patch("/:id", vertoken, authRoles("Vendor","Admin"), updateproduct);
-router.delete("/:id", vertoken, authRoles("Vendor","Admin"), deleteproduct);
-
-router.get("/:id", getproductbyid);//for product page
 
 router.get("/category/:category", getproductsbycategory);
 router.get("/seller/:seller", getproductsbyseller);
 
 router.get("/:id/reviews", getreviewsbyproductid);
 router.post("/:id/reviews", vertoken, addreview);
+
+// product by id last
+router.get("/:id", getproductbyid);
+
+router.patch("/:id", vertoken, authRoles("Vendor", "Admin"), updateproduct);
+router.delete("/:id", vertoken, authRoles("Vendor", "Admin"), deleteproduct);
+
 
 module.exports = router;
