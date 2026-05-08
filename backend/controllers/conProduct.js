@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const modAllCategories = require("../models/modAllCategories");
 const modProducts = require("../models/modProducts");
+const modNav = require("../models/modNav");
 
 const createproduct = async (req, res) => {
   try {
@@ -231,17 +232,17 @@ const getProducts = async (req, res) => {
   try {
     const {
       search = "",
+      nav,
       sort = "createdAt",
       order = "desc",
-      category,
       page = 1,
-      // limit = 10,
+      limit = 10,
     } = req.query;
 
     let filter = {};
 
-    // Search by title, brand, description
-    if (search) {
+    // search filter
+    if (search.trim()) {
       filter.$or = [
         { title: { $regex: search, $options: "i" } },
         { brand: { $regex: search, $options: "i" } },
@@ -249,12 +250,22 @@ const getProducts = async (req, res) => {
       ];
     }
 
-    // Filter by category
-    if (category) {
-      filter.category = category;
+    // nav-based category filter
+    if (nav) {
+      const navItem = await modNav.findById(nav);
+
+      if (!navItem) {
+        return res.status(404).json({
+          message: "Navigation item not found",
+        });
+      }
+
+      filter.category = {
+        $in: navItem.categories,
+      };
     }
 
-    // Sorting
+    // sorting
     const sortOption = {
       [sort]: order === "asc" ? 1 : -1,
     };
@@ -263,8 +274,8 @@ const getProducts = async (req, res) => {
       .find(filter)
       .populate("category")
       .sort(sortOption)
-      // .skip((page - 1) * limit)
-      // .limit(Number(limit));
+      .skip((Number(page) - 1) * Number(limit))
+      .limit(Number(limit));
 
     const total = await modProducts.countDocuments(filter);
 
@@ -272,7 +283,7 @@ const getProducts = async (req, res) => {
       products,
       total,
       currentPage: Number(page),
-      // totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / Number(limit)),
     });
   } catch (error) {
     res.status(500).json({
