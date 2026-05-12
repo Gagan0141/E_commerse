@@ -32,7 +32,7 @@ export default function Signup() {
       setError("");
 
       console.log("Signup payload:", form);
-      await api.post("/auth/signup", form, {
+      await api.post("/api/auth/signup", form, {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",

@@ -12,7 +12,7 @@ export default function Wishlist() {
   const fetchWishlist = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/wishlist", {
+      const res = await api.get("/api/wishlist", {
         params: {
           role: "User",
         },
@@ -28,7 +28,7 @@ export default function Wishlist() {
   // Fetch cart items for checking availability
   const fetchCartItems = async () => {
     try {
-      const res = await api.get("/cart");
+      const res = await api.get("/api/cart");
       setCartItems(res.data.products || []);
     } catch (err) {
       console.error("Failed to fetch cart items:", err);
@@ -50,7 +50,7 @@ export default function Wishlist() {
   // Add to cart from wishlist
   const addToCart = async (productId) => {
     try {
-      await api.post("/cart/add", {
+      await api.post("/api/cart/add", {
         productId,
         role: "User",
       });

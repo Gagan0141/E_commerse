@@ -21,7 +21,7 @@ export default function CategoriesDashboard() {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/cat");
+      const res = await api.get("/api/cat");
       setCategories(res.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch categories");

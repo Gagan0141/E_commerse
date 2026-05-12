@@ -27,7 +27,7 @@ export default function Home() {
 
   const fetchnavitems = async () => {
     try {
-      const response = await api.get("/nav");
+      const response = await api.get("/api/nav");
       setNavItems(response.data);
     } catch (err) {
       console.error("Failed to fetch data", err);
@@ -36,7 +36,7 @@ export default function Home() {
 
   const fetchCartCount = async () => {
     // if (user === "User") {
-    const res = await api.get("/cart/count", {
+    const res = await api.get("/api/cart/count", {
       params: { role: "User" },
     });
 
@@ -64,7 +64,7 @@ export default function Home() {
         params.nav = navId;
       }
 
-      const res = await api.get("/product/filter", {
+      const res = await api.get("/api/product/filter", {
         params,
       });
 
@@ -75,11 +75,17 @@ export default function Home() {
       setLoading(false);
     }
   };
+  const resetHome = () => {
+    setActive(null);
+    setSearch("");
+    setCurrentPage(1);
+    fetchProducts("", null);
+  };
   //add to cart
   const addtocart = async (productId) => {
     try {
       const cartitem = { productId };
-      await api.post("/cart/add", {
+      await api.post("/api/cart/add", {
         ...cartitem,
         role: "User",
       }); // console.log("success", res.data);
@@ -93,7 +99,7 @@ export default function Home() {
   const wishlist = async (productId) => {
     try {
       const wishitem = { productId };
-      const res = await api.post("/wishlist/add", {
+      const res = await api.post("/api/wishlist/add", {
         ...wishitem,
         role: "User",
       });
@@ -152,6 +158,38 @@ export default function Home() {
 
               {/* Desktop Navigation */}
               <div className="hidden lg:flex items-center gap-8">
+                <div className="relative group">
+                  <button
+                    type="button"
+                    onClick={resetHome}
+                    className="
+      relative
+      text-[#F5E6D3]
+      hover:text-[#C2A878]
+      transition-colors duration-300
+      font-medium
+      pb-2
+    "
+                  >
+                    Home
+                  </button>
+
+                  {active === null && (
+                    <motion.div
+                      layoutId="active-navbar-indicator"
+                      className="
+        absolute
+        left-0
+        right-0
+        bottom-0
+        h-[2px]
+        bg-[#8B5E3C]
+        rounded-full
+      "
+                    />
+                  )}
+                </div>
+
                 {navItems.map((link) => (
                   <div key={link.title} className="relative group">
                     <button
@@ -370,6 +408,15 @@ export default function Home() {
                 className="lg:hidden border-t border-[#5C4635] py-4"
               >
                 <div className="flex flex-col gap-4">
+                  <button
+                    onClick={() => {
+                      resetHome();
+                      setMobileOpen(false);
+                    }}
+                    className="text-[#F5E6D3] px-2 py-2 hover:text-[#C2A878]"
+                  >
+                    Home
+                  </button>
                   {navItems.map((link) => (
                     <button
                       onClick={() => {

@@ -236,7 +236,7 @@ const getProducts = async (req, res) => {
       sort = "createdAt",
       order = "desc",
       page = 1,
-      limit = 10,
+      // limit = 10,
     } = req.query;
 
     let filter = {};
@@ -274,8 +274,8 @@ const getProducts = async (req, res) => {
       .find(filter)
       .populate("category")
       .sort(sortOption)
-      .skip((Number(page) - 1) * Number(limit))
-      .limit(Number(limit));
+      // .skip((Number(page) - 1) * Number(limit))
+      // .limit(Number(limit));
 
     const total = await modProducts.countDocuments(filter);
 
@@ -283,7 +283,7 @@ const getProducts = async (req, res) => {
       products,
       total,
       currentPage: Number(page),
-      totalPages: Math.ceil(total / Number(limit)),
+      // totalPages: Math.ceil(total / Number(limit)),
     });
   } catch (error) {
     res.status(500).json({

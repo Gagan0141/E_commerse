@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
 
       for (const role of roles) {
         try {
-          const res = await api.get("/auth/me", {
+          const res = await api.get("/api/auth/me", {
             params: { role },
             withCredentials: true,
           });
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }) => {
   // Login into one role (preserves other role sessions)
   const login = async (credentials) => {
     try {
-      const res = await api.post("/auth/login", credentials, {
+      const res = await api.post("/api/auth/login", credentials, {
         withCredentials: true,
       });
 
@@ -111,7 +111,7 @@ export const AuthProvider = ({ children }) => {
   // Logout only one role
   const logoutRole = async (role) => {
     try {
-      await api.post("/auth/logout", { role }, { withCredentials: true });
+      await api.post("/api/auth/logout", { role }, { withCredentials: true });
 
       const updatedUsers = { ...users };
       delete updatedUsers[role];
@@ -146,7 +146,7 @@ export const AuthProvider = ({ children }) => {
 
       for (const role of roles) {
         try {
-          await api.post("/auth/logout", { role }, { withCredentials: true });
+          await api.post("/api/auth/logout", { role }, { withCredentials: true });
         } catch (err) {
           console.error(`Error logging out from ${role}:`, err);
         }

@@ -47,7 +47,7 @@ export default function Checkout() {
 
   const fetchCart = async () => {
     try {
-      const res = await api.get("/cart", {
+      const res = await api.get("/api/cart", {
         params: { role: "User" },
       });
 
@@ -61,7 +61,7 @@ export default function Checkout() {
 
   const fetchAddresses = async () => {
     try {
-      const res = await api.get("/address");
+      const res = await api.get("/api/address");
       setSavedAddresses(res.data || []);
       
       // Auto-select default address if available
@@ -121,7 +121,7 @@ export default function Checkout() {
       setPlacingOrder(true);
 
       // Create order on backend
-      const orderRes = await api.post("/order/create", {
+      const orderRes = await api.post("/api/order/create", {
         items: cartItems.map((item) => ({
           product: item.product._id,
           quantity: item.quantity,
@@ -146,7 +146,7 @@ export default function Checkout() {
         order_id: orderId,
         handler: async (response) => {
           try {
-            await api.post("/order/verify-payment", {
+            await api.post("/api/order/verify-payment", {
               orderId,
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,

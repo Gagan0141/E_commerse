@@ -1,24 +1,13 @@
 const userModel = require("../models/modUser");
-const vendorModel = require("../models/modVendor");
-const adminModel = require("../models/modAdmin");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 // helper
 const getModelByRole = (role) => {
-  switch (role) {
-    case "User":
-      return userModel;
-
-    case "Vendor":
-      return vendorModel;
-
-    case "Admin":
-      return adminModel;
-
-    default:
-      return null;
+  if (!["User", "Admin", "Vendor"].includes(role)) {
+    return null;
   }
+  return userModel;
 };
 
 const getCookieName = (role) => {
@@ -132,6 +121,7 @@ const login = async (req, res) => {
     });
 
     return res.json({
+      accessToken: token,
       user: {
         id: user._id,
         name: user.name,
@@ -149,7 +139,9 @@ const login = async (req, res) => {
 // logout
 const logout = async (req, res) => {
   try {
-    const role = req.body.role || req.query.role;
+    // Get role from decoded token (set by verifyToken middleware)
+    // Or from request body for cases where we want to logout a specific role
+    const role = req.body?.role || req.user?.role;
 
     if (!role) {
       return res.status(400).json({
@@ -158,6 +150,12 @@ const logout = async (req, res) => {
     }
 
     const cookieName = getCookieName(role);
+
+    if (!cookieName) {
+      return res.status(400).json({
+        message: "Invalid role",
+      });
+    }
 
     res.clearCookie(cookieName, {
       httpOnly: true,
@@ -231,7 +229,7 @@ const getCustomers = async (req, res) => {
 // GET VENDORS
 const getVendors = async (req, res) => {
   try {
-    const vendors = await vendorModel.find().select("-password");
+    const vendors = await userModel.find({ role: "Vendor" }).select("-password");
 
     res.status(200).json(vendors);
   } catch (error) {
@@ -246,15 +244,7 @@ const findModelById = async (id) => {
   if (user) {
     return {
       model: userModel,
-      type: "User",
-    };
-  }
-
-  let vendor = await vendorModel.findById(id);
-  if (vendor) {
-    return {
-      model: vendorModel,
-      type: "Vendor",
+      type: user.role,
     };
   }
 
