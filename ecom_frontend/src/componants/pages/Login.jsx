@@ -49,14 +49,10 @@ function Login() {
         localStorage.removeItem("rememberedEmail");
       }
     } catch (err) {
-      const apierror = err.response?.data;
-      setError(
-        typeof apierror
-          ? apierror
-          : apierror?.message || apierror?.error || "Login Failed",
-      );
-      console.error(err);
-      setError("invalid username or password");
+      const apiError = err.response?.data;
+      const errorMessage = apiError?.message || "Login failed. Please try again.";
+      setError(errorMessage);
+      console.error("Login error:", err);
     } finally {
       setLoading(false);
     }
@@ -219,6 +215,13 @@ function Login() {
                   {showpassword ? <FaEye /> : <FaEyeSlash />}
                 </button>
               </div>
+            </div>
+
+            {/* Role Selection */}
+            {/* <div className="mb-6">
+              <label className="block mb-2 text-[#C2A878] text-sm">
+                Login As
+              </label>
               <select
                 value={form.role}
                 onChange={(e) =>
@@ -227,13 +230,13 @@ function Login() {
                     role: e.target.value,
                   })
                 }
-                className="w-full px-4 py-3 mt-5 rounded-xl bg-[#1C1917] border border-[#5C4635] text-[#F5E6D3] outline-none focus:border-[#C2A878]"
+                className="w-full px-4 py-3 rounded-xl bg-[#1C1917] border border-[#5C4635] text-[#F5E6D3] outline-none focus:border-[#C2A878]"
               >
                 <option value="User">User</option>
                 <option value="Vendor">Vendor</option>
                 <option value="Admin">Admin</option>
               </select>
-            </div>
+            </div> */}
 
             {/* Remember */}
             <div className="mb-8 flex justify-between items-center">

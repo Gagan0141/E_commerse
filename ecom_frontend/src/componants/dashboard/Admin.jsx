@@ -33,7 +33,7 @@ export default function Admin() {
 
   const fetchCategories = async () => {
     try {
-      const res = await api.get("/cat");
+      const res = await api.get("/api/cat");
       setCategories(res.data);
     } catch (error) {
       console.error(error);
@@ -49,7 +49,7 @@ export default function Admin() {
 
     try {
       if (activeModal === "nav") {
-        const response = await api.post("/nav/add", {
+        const response = await api.post("/api/nav/add", {
           ...form,
           role: user.role,
         });
@@ -57,7 +57,7 @@ export default function Admin() {
       }
 
       if (activeModal === "cat") {
-        const response = await api.post("/cat/add", {
+        const response = await api.post("/api/cat/add", {
           ...form,
           role: user.role,
         });
@@ -65,7 +65,7 @@ export default function Admin() {
       }
 
       if (activeModal === "product") {
-        const response = await api.post("/product/add", {
+        const response = await api.post("/api/product/add", {
           ...form,
           role: user.role,
         });

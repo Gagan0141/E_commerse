@@ -24,7 +24,7 @@ export default function Address() {
   const fetchAddresses = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/address");
+      const res = await api.get("/api/address");
       setAddresses(res.data || []);
     } catch (error) {
       console.error("Error fetching addresses:", error);
@@ -58,7 +58,7 @@ export default function Address() {
         alert("Address updated successfully");
       } else {
         // Create new address
-        await api.post("/address", formData);
+        await api.post("/api/address", formData);
         alert("Address added successfully");
       }
 

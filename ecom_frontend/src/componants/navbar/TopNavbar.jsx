@@ -27,7 +27,7 @@ export default function TopNavbar() {
 
   const fetchnavitems = async () => {
     try {
-      const response = await api.get("/nav");
+      const response = await api.get("/api/nav");
       setNavItems(response.data);
     } catch (err) {
       console.error("Failed to fetch data", err);
@@ -36,7 +36,7 @@ export default function TopNavbar() {
 
   const fetchCartCount = async () => {
     // if (user === "User") {
-      const res = await api.get("/cart/count", {
+      const res = await api.get("/api/cart/count", {
         params: { role: "User" },
       });
 

@@ -33,7 +33,7 @@ export default function VendorsDashboard() {
     try {
       setIsLoading(true);
 
-      const res = await api.get("/auth/vendors");
+      const res = await api.get("/api/auth/vendors");
 
       setVendors(res.data);
     } catch (err) {
@@ -47,7 +47,7 @@ export default function VendorsDashboard() {
     if (!window.confirm("Are you sure you want to delete this vendor?")) return;
 
     try {
-      await api.delete(`/auth/${id}`, {
+      await api.delete(`/api/auth/${id}`, {
         data: { role: user.role },
       });
 
@@ -70,7 +70,7 @@ export default function VendorsDashboard() {
 
   const handleUpdate = async (id) => {
     try {
-      const res = await api.patch(`/auth/${id}`, editData);
+      const res = await api.patch(`/api/auth/${id}`, editData);
       setVendors((prev) => prev.map((v) => (v._id === id ? res.data : v)));
 
       setEditId(null);

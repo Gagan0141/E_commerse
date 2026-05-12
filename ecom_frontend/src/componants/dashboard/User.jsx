@@ -38,9 +38,9 @@ export default function User() {
       setLoading(true);
 
       const [orderRes, reviewRes, addressRes] = await Promise.all([
-        api.get("/order/user"),
-        api.get("/review/user"),
-        api.get("/address"),
+        api.get("/api/order/user"),
+        api.get("/api/review/user"),
+        api.get("/api/address"),
       ]);
 
       // setUser(userRes.data);
@@ -66,7 +66,7 @@ export default function User() {
     try {
       setSaving(true);
 
-      await api.patch("/auth/update", editData);
+      await api.patch("/api/auth/update", editData);
       await refresh();
       alert("Account updated successfully");
     } catch (error) {

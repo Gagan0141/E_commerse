@@ -13,7 +13,7 @@ export default function ProductModal({
 
   const fetchitems = async () => {
     try {
-      const res = await api.get("/cat");
+      const res = await api.get("/api/cat");
       setcategory(res.data);
     } catch (error) {
       console.error("failed to fetch data", error);

@@ -29,7 +29,7 @@ export default function Vendor() {
     setloading(true);
     try {
       if (activeModal === "product") {
-        const res = await api.post("/product/add", {
+        const res = await api.post("/api/product/add", {
           ...form,
           role: user.role,
         });

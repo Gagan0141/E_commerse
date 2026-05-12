@@ -14,31 +14,47 @@ const getCookieName = (role) => {
 };
 
 const vertoken = (req, res, next) => {
-  const role = req.body?.role || req.query?.role;
-
-  if (!role) {
-    return res.status(400).json({
-      message: "Role is required",
-    });
-  }
-
-  const cookieName = getCookieName(role);
-
-  if (!cookieName) {
-    return res.status(400).json({
-      message: "Invalid role",
-    });
-  }
-
-  const token = req.cookies[cookieName];
-
-  if (!token) {
-    return res.status(401).json({
-      message: `${role} not logged in`,
-    });
-  }
-
   try {
+    // Try to get token from multiple sources in order of preference:
+    // 1. Authorization header (Bearer token)
+    // 2. Role-specific cookies (userToken, vendorToken, adminToken)
+    
+    let token = null;
+    let role = req.body?.role || req.query?.role;
+
+    // First, try Authorization header
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.substring(7);
+    }
+
+    // If no Authorization header, try role-specific cookies
+    if (!token && role) {
+      const cookieName = getCookieName(role);
+      if (cookieName) {
+        token = req.cookies[cookieName];
+      }
+    }
+
+    // If still no token, try all role cookies
+    if (!token) {
+      const roles = ["User", "Vendor", "Admin"];
+      for (const r of roles) {
+        const cookieName = getCookieName(r);
+        if (req.cookies[cookieName]) {
+          token = req.cookies[cookieName];
+          role = r;
+          break;
+        }
+      }
+    }
+
+    if (!token) {
+      return res.status(401).json({
+        message: "No token provided",
+      });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     req.user = decoded;
