@@ -40,7 +40,7 @@ const productSchema = new mongoose.Schema(
     },
     seller: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "vendor",
+      ref: "User",
       required: true,
     },
     rating: {

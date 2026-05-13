@@ -1,11 +1,22 @@
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
+
 const mongodb = require("./config/mondb");
+
+const app = express();
+
+app.set("trust proxy", 1);
 const navRoute = require("./routes/rouNav");
 const productRoute = require("./routes/rouProduct");
 const acatRoute = require("./routes/rouallCategories");
+
 const userRoute = require("./routes/rouUsers");
-const cookieParser = require("cookie-parser");
+const authRoute = require("./routes/rouAuth");
+
+// const cookieParser = require("cookie-parser");
 
 const reviewRoutes = require("./routes/rouReviews");
 const wishlistRoute = require("./routes/rouWishlist");
@@ -13,7 +24,7 @@ const cartRoute = require("./routes/rouCart");
 const routeAddress = require("./routes/routeAddress");
 const orderRoute = require("./routes/rouOrder");
 
-const app = express();
+// const app = express();
 const port = 5000;
 mongodb();
 
@@ -32,7 +43,9 @@ app.use("/api/cart", cartRoute);
 
 app.use("/api/address", routeAddress);
 app.use("/api/order", orderRoute);
-app.use("/api/auth", userRoute);
+
+app.use("/api/auth", authRoute);
+app.use("/api/users", userRoute);
 
 app.get("/", (req, res) => {
   res.send("backend running");

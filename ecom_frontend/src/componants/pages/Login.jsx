@@ -218,7 +218,7 @@ function Login() {
             </div>
 
             {/* Role Selection */}
-            {/* <div className="mb-6">
+            <div className="mb-6">
               <label className="block mb-2 text-[#C2A878] text-sm">
                 Login As
               </label>
@@ -236,7 +236,7 @@ function Login() {
                 <option value="Vendor">Vendor</option>
                 <option value="Admin">Admin</option>
               </select>
-            </div> */}
+            </div>
 
             {/* Remember */}
             <div className="mb-8 flex justify-between items-center">
@@ -264,8 +264,11 @@ function Login() {
 
             {/* Buttons */}
             <div className="space-y-4">
-              <button className="w-full py-3 rounded-xl bg-[#8B5E3C] text-white hover:bg-[#734A2E] transition">
-                Login
+              <button
+                disabled={loading}
+                className="w-full py-3 rounded-xl bg-[#8B5E3C] text-white hover:bg-[#734A2E] transition disabled:opacity-60"
+              >
+                {loading ? "Logging in..." : "Login"}
               </button>
 
               <button

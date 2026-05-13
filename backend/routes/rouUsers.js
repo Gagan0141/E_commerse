@@ -2,10 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  create_user,
-  login,
-  logout,
-  me,
+  // create_user,
   getCustomers,
   getVendors,
   updateAccount,
@@ -14,28 +11,25 @@ const {
 } = require("../controllers/conUser");
 
 const { vertoken } = require("../middleware/verifyToken");
+
 const authRoles = require("../middleware/authRole");
 
-// Public routes
-router.post("/signup", create_user);
-router.post("/login", login);
+// optional if you still want direct user creation
+// router.post(
+//   "/signup",
+//   create_user
+// );
 
-// Protected routes
-router.post("/logout", vertoken, logout);
-
-// Get current user info - single endpoint that works with any authenticated role
-router.get("/me", vertoken, me);
-
-// Optional: Role-specific endpoints for backwards compatibility
-router.get("/me/user", vertoken, authRoles("User"), me);
-router.get("/me/vendor", vertoken, authRoles("Vendor"), me);
-router.get("/me/admin", vertoken, authRoles("Admin"), me);
-
-router.get("/customers", getCustomers);
-router.get("/vendors", getVendors);
-router.patch("/:id", updateAccount);
-router.delete("/:id", deleteAccount);
-
+// self update
 router.patch("/update", vertoken, selfUpdateAccount);
+
+// admin routes
+router.get("/customers", vertoken, authRoles("Admin"), getCustomers);
+
+router.get("/vendors", vertoken, authRoles("Admin"), getVendors);
+
+router.patch("/:id", vertoken, authRoles("Admin"), updateAccount);
+
+router.delete("/:id", vertoken, authRoles("Admin"), deleteAccount);
 
 module.exports = router;

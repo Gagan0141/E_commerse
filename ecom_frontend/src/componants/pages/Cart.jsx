@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import api from "../api/axios";
 import { Link } from "react-router-dom";
 
@@ -9,48 +9,62 @@ export default function Cart() {
   const [totalPrice, setTotalPrice] = useState(0);
 
   // Fetch cart items
-  const fetchCartItems = async () => {
+  const fetchCartItems = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get("/cart", {
+      setError("");
+      const res = await api.get("/api/cart", {
         params: { role: "User" },
       }); 
-      console.log(res.data);
       setCartItems(res.data.items || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch cart items");
+      setCartItems([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Update item quantity
   const updateQuantity = async (itemId, newQuantity) => {
     if (newQuantity < 1) return;
-    // const prvCart = [...cartItems];
+    const previousCartItems = cartItems;
+
     setCartItems((prv) =>
       prv.map((item) =>
         item._id === itemId ? { ...item, quantity: newQuantity } : item,
       ),
     );
+
     try {
-      await api.put(`/cart/quantity/${itemId}`, {
+      setError("");
+      await api.put(`/api/cart/quantity/${itemId}`, {
         quantity: newQuantity,
         role: "User",
-      }); // fetchCartItems(); // Refresh cart after update
+      });
+
+      await fetchCartItems();
     } catch (err) {
+      setCartItems(previousCartItems);
       setError(err.response?.data?.message || "Failed to update quantity");
     }
   };
 
   // Remove item from cart
   const removeItem = async (itemId) => {
+    const previousCartItems = cartItems;
+
     setCartItems((prv) => prv.filter((item) => item._id !== itemId));
+
     try {
-      await api.delete(`/cart/${itemId}`, {
+      setError("");
+      await api.delete(`/api/cart/${itemId}`, {
         data: { role: "User" },
-      }); // fetchCartItems(); // Refresh cart after removal
+      });
+
+      await fetchCartItems();
     } catch (err) {
+      setCartItems(previousCartItems);
       setError(err.response?.data?.message || "Failed to remove item");
     }
   };
@@ -60,6 +74,8 @@ export default function Cart() {
     const calculateTotal = () => {
       let total = 0;
       cartItems.forEach((item) => {
+        if (!item.product) return;
+
         const price = item.product.discountPercentage
           ? item.product.price * (1 - item.product.discountPercentage / 100)
           : item.product.price;
@@ -74,7 +90,7 @@ export default function Cart() {
   // Initial fetch
   useEffect(() => {
     fetchCartItems();
-  }, []);
+  }, [fetchCartItems]);
 
   if (loading) {
     return (
@@ -84,21 +100,21 @@ export default function Cart() {
     );
   }
 
-  // if (error) {
-  //   return (
-  //     <div className="min-h-screen bg-[#1C1917] text-[#F5E6D3] flex items-center justify-center">
-  //       <div className="bg-[#A26769]/10 border border-[#A26769]/30 text-[#F5E6D3] p-6 rounded-xl max-w-md text-center">
-  //         <p className="mb-4">{error}</p>
-  //         <button
-  //           onClick={fetchCartItems}
-  //           className="bg-[#8B5E3C] hover:bg-[#734A2E] text-white py-2 px-4 rounded-lg transition"
-  //         >
-  //           Retry
-  //         </button>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  if (error && cartItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#1C1917] text-[#F5E6D3] flex items-center justify-center">
+        <div className="bg-[#A26769]/10 border border-[#A26769]/30 text-[#F5E6D3] p-6 rounded-xl max-w-md text-center">
+          <p className="mb-4">{error}</p>
+          <button
+            onClick={fetchCartItems}
+            className="bg-[#8B5E3C] hover:bg-[#734A2E] text-white py-2 px-4 rounded-lg transition"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (cartItems.length === 0) {
     return (
@@ -139,6 +155,11 @@ export default function Cart() {
     <div className="min-h-screen bg-[#1C1917] text-[#F5E6D3] py-12">
       <div className="container mx-auto px-4 max-w-6xl">
         <h1 className="text-3xl font-bold mb-8">Your Shopping Cart</h1>
+        {error && (
+          <div className="mb-6 bg-[#A26769]/10 border border-[#A26769]/30 text-[#F5E6D3] p-4 rounded-xl">
+            {error}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
@@ -146,6 +167,8 @@ export default function Cart() {
             <div className="bg-[#2D2A27] rounded-lg shadow-lg overflow-hidden">
               {cartItems.map((item) => {
                 const product = item.product;
+                if (!product) return null;
+
                 const discountedPrice = product.discountPercentage
                   ? product.price * (1 - product.discountPercentage / 100)
                   : product.price;

@@ -36,16 +36,18 @@ export default function Wishlist() {
   };
 
   // Remove item from wishlist
-  const removeFromWishlist = async (productId) => {
-    try {
-      await api.delete(`/wishlist/${productId}`, {
-        data: { role: "User" },
-      });
-      setWishlistItems(wishlistItems.filter((item) => item._id !== productId));
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to remove from wishlist");
-    }
-  };
+const removeFromWishlist = async (productId) => {
+  try {
+    const res = await api.delete(`api/wishlist/${productId}`);
+
+    setWishlistItems(res.data.products);
+  } catch (err) {
+    setError(
+      err.response?.data?.message ||
+        "Failed to remove from wishlist"
+    );
+  }
+};
 
   // Add to cart from wishlist
   const addToCart = async (productId) => {
@@ -118,7 +120,7 @@ export default function Wishlist() {
               Start adding items you like to your wishlist
             </p>
             <Link
-              to="/products"
+              to="/"
               className="inline-block bg-[#8B5E3C] hover:bg-[#734A2E] text-white py-3 px-6 rounded-xl font-medium transition"
             >
               Browse Products

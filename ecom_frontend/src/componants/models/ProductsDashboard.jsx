@@ -9,7 +9,7 @@ export default function Productsdashboard() {
 
   const fetchitems = async () => {
     try {
-      const res = await api.get("/cat");
+      const res = await api.get("/api/cat");
       setcategory(res.data);
     } catch (error) {
       console.error("failed to fetch data", error);
@@ -34,7 +34,7 @@ export default function Productsdashboard() {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/product");
+      const res = await api.get("/api/product");
       setProducts(res.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch products");
@@ -45,7 +45,7 @@ export default function Productsdashboard() {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/product/${id}`, {
+      await api.delete(`/api/product/${id}`, {
         data: {
           role: user.role,
         },
@@ -75,7 +75,7 @@ export default function Productsdashboard() {
     try {
       setSaving(true);
 
-      const res = await api.patch(`/product/${id}`, {
+      const res = await api.patch(`/api/product/${id}`, {
         ...editData,
         role: user.role,
       });

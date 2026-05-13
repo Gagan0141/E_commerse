@@ -1,183 +1,315 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import api from "../api/axios";
-import { createContext, useContext, useState, useEffect } from "react";
 
-const AuthContext = createContext({
-  user: null,
-  users: {},
-  loading: true,
-  login: async () => {},
-  logout: async () => {},
-  logoutRole: async () => {},
-  refresh: async () => {},
-  isRoleLoggedIn: () => {},
-});
+const AuthContext = createContext(undefined);
+const ROLES = ["Vendor", "Admin", "User"];
 
-export const AuthProvider = ({ children }) => {
-  const [user, setuser] = useState(null);
-  const [users, setusers] = useState({});
-  const [loading, setloading] = useState(true);
+const normalizeUser = (user) => {
+  if (!user) return null;
 
-  const isRoleLoggedIn = (role) => {
-    return !!users[role];
+  const id = user._id || user.id;
+
+  return {
+    ...user,
+    id,
+    _id: id,
   };
-
-  // Refresh all available sessions
-  const refresh = async () => {
-    setloading(true);
-
-    try {
-      const loggedInUsers = {};
-      const roles = ["Admin", "Vendor", "User"];
-
-      for (const role of roles) {
-        try {
-          const res = await api.get("/api/auth/me", {
-            params: { role },
-            withCredentials: true,
-          });
-
-          loggedInUsers[role] = res.data;
-        } catch (err) {
-          // role not logged in, ignore
-        }
-      }
-
-      setusers(loggedInUsers);
-
-      const activeRole = localStorage.getItem("activeRole");
-
-      // Restore active role if still valid
-      if (activeRole && loggedInUsers[activeRole]) {
-        setuser(loggedInUsers[activeRole]);
-        localStorage.setItem("loggedin", "true");
-      } else {
-        // Fallback to first available logged-in role
-        const fallbackRole = Object.keys(loggedInUsers)[0];
-
-        if (fallbackRole) {
-          setuser(loggedInUsers[fallbackRole]);
-          localStorage.setItem("activeRole", fallbackRole);
-          localStorage.setItem("loggedin", "true");
-        } else {
-          setuser(null);
-          localStorage.removeItem("activeRole");
-          localStorage.removeItem("loggedin");
-        }
-      }
-    } catch (err) {
-      console.error("Error refreshing user sessions:", err);
-
-      setuser(null);
-      setusers({});
-
-      localStorage.removeItem("activeRole");
-      localStorage.removeItem("loggedin");
-    } finally {
-      setloading(false);
-    }
-  };
-
-  useEffect(() => {
-    refresh();
-  }, []);
-
-  // Login into one role (preserves other role sessions)
-  const login = async (credentials) => {
-    try {
-      const res = await api.post("/api/auth/login", credentials, {
-        withCredentials: true,
-      });
-
-      const newUser = res.data.user;
-      const role = newUser.role;
-
-      localStorage.setItem("activeRole", role);
-      localStorage.setItem("loggedin", "true");
-
-      setusers((prev) => ({
-        ...prev,
-        [role]: newUser,
-      }));
-
-      setuser(newUser);
-
-      return res;
-    } catch (err) {
-      console.error("Login error:", err);
-      throw err;
-    }
-  };
-
-  // Logout only one role
-  const logoutRole = async (role) => {
-    try {
-      await api.post("/api/auth/logout", { role }, { withCredentials: true });
-
-      const updatedUsers = { ...users };
-      delete updatedUsers[role];
-
-      setusers(updatedUsers);
-
-      // If current active user logged out, switch to another available role
-      if (user?.role === role) {
-        const remainingRoles = Object.keys(updatedUsers);
-
-        if (remainingRoles.length > 0) {
-          const nextRole = remainingRoles[0];
-
-          localStorage.setItem("activeRole", nextRole);
-          setuser(updatedUsers[nextRole]);
-        } else {
-          setuser(null);
-          localStorage.removeItem("activeRole");
-          localStorage.removeItem("loggedin");
-        }
-      }
-    } catch (err) {
-      console.error(`Logout error for ${role}:`, err);
-      throw err;
-    }
-  };
-
-  // Logout all roles
-  const logout = async () => {
-    try {
-      const roles = Object.keys(users);
-
-      for (const role of roles) {
-        try {
-          await api.post("/api/auth/logout", { role }, { withCredentials: true });
-        } catch (err) {
-          console.error(`Error logging out from ${role}:`, err);
-        }
-      }
-    } catch (err) {
-      console.error("Logout error:", err);
-    } finally {
-      setuser(null);
-      setusers({});
-
-      localStorage.removeItem("activeRole");
-      localStorage.removeItem("loggedin");
-    }
-  };
-
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        users,
-        loading,
-        login,
-        logout,
-        logoutRole,
-        refresh,
-        isRoleLoggedIn,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
 };
 
-export const useAuth = () => useContext(AuthContext);
+const nextRoleFromUsers = (users, preferredRole) => {
+  if (preferredRole && users[preferredRole]) {
+    return preferredRole;
+  }
+
+  return ROLES.find((role) => users[role]) || null;
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+
+  return context;
+};
+
+export const AuthProvider = ({ children }) => {
+  const [tokens, setTokens] = useState({});
+  const [users, setUsers] = useState({});
+  const [activeRole, setActiveRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const applySession = useCallback((data, makeActive = true) => {
+    const role = data.user?.role;
+
+    if (!role || !data.accessToken) {
+      return null;
+    }
+
+    const currentUser = normalizeUser(data.user);
+
+    setTokens((prev) => ({
+      ...prev,
+      [role]: data.accessToken,
+    }));
+
+    setUsers((prev) => ({
+      ...prev,
+      [role]: currentUser,
+    }));
+
+    if (makeActive) {
+      setActiveRole(role);
+    }
+
+    return {
+      role,
+      token: data.accessToken,
+      user: currentUser,
+    };
+  }, []);
+
+  const clearRole = useCallback((role) => {
+    setTokens((prev) => {
+      const next = { ...prev };
+      delete next[role];
+      return next;
+    });
+
+    setUsers((prev) => {
+      const next = { ...prev };
+      delete next[role];
+
+      setActiveRole((currentRole) =>
+        currentRole === role ? nextRoleFromUsers(next) : currentRole,
+      );
+
+      return next;
+    });
+  }, []);
+
+  const clearAuth = useCallback(() => {
+    setTokens({});
+    setUsers({});
+    setActiveRole(null);
+  }, []);
+
+  const refresh = useCallback(
+    async (role = activeRole) => {
+      const res = await api.post("/api/auth/refresh", role ? { role } : {});
+
+      if (Array.isArray(res.data.sessions)) {
+        const nextTokens = {};
+        const nextUsers = {};
+
+        res.data.sessions.forEach((session) => {
+          const sessionRole = session.user?.role;
+
+          if (sessionRole && session.accessToken) {
+            nextTokens[sessionRole] = session.accessToken;
+            nextUsers[sessionRole] = normalizeUser(session.user);
+          }
+        });
+
+        setTokens(nextTokens);
+        setUsers(nextUsers);
+        setActiveRole((currentRole) =>
+          nextRoleFromUsers(nextUsers, currentRole),
+        );
+
+        return {
+          tokens: nextTokens,
+          users: nextUsers,
+          role: nextRoleFromUsers(nextUsers, activeRole),
+        };
+      }
+
+      return applySession(res.data, !role || role === activeRole);
+    },
+    [activeRole, applySession],
+  );
+
+  useEffect(() => {
+    const restoreSessions = async () => {
+      try {
+        const res = await api.post("/api/auth/refresh", {});
+        const nextTokens = {};
+        const nextUsers = {};
+
+        res.data.sessions.forEach((session) => {
+          const sessionRole = session.user?.role;
+
+          if (sessionRole && session.accessToken) {
+            nextTokens[sessionRole] = session.accessToken;
+            nextUsers[sessionRole] = normalizeUser(session.user);
+          }
+        });
+
+        setTokens(nextTokens);
+        setUsers(nextUsers);
+        setActiveRole(nextRoleFromUsers(nextUsers));
+      } catch {
+        clearAuth();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    restoreSessions();
+  }, [clearAuth]);
+
+  const token = activeRole ? tokens[activeRole] : null;
+  const user = activeRole ? users[activeRole] : null;
+
+  useLayoutEffect(() => {
+    const interceptor = api.interceptors.request.use((config) => {
+      if (token) {
+        config.headers = config.headers || {};
+        config.headers.Authorization = `Bearer ${token}`;
+        config._authRole = activeRole;
+      }
+
+      return config;
+    });
+
+    return () => {
+      api.interceptors.request.eject(interceptor);
+    };
+  }, [activeRole, token]);
+
+  useLayoutEffect(() => {
+    const refreshingByRole = {};
+
+    const interceptor = api.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
+        const status = error.response?.status;
+        const requestRole = originalRequest?._authRole || activeRole;
+
+        if (
+          status === 401 &&
+          requestRole &&
+          originalRequest &&
+          !originalRequest._retry &&
+          !originalRequest.url?.startsWith("/api/auth/")
+        ) {
+          originalRequest._retry = true;
+
+          try {
+            refreshingByRole[requestRole] =
+              refreshingByRole[requestRole] || refresh(requestRole);
+
+            const session = await refreshingByRole[requestRole];
+            refreshingByRole[requestRole] = null;
+
+            originalRequest.headers = originalRequest.headers || {};
+            originalRequest.headers.Authorization = `Bearer ${session.token}`;
+
+            return api(originalRequest);
+          } catch (refreshError) {
+            refreshingByRole[requestRole] = null;
+            clearRole(requestRole);
+
+            return Promise.reject(refreshError);
+          }
+        }
+
+        return Promise.reject(error);
+      },
+    );
+
+    return () => {
+      api.interceptors.response.eject(interceptor);
+    };
+  }, [activeRole, clearRole, refresh]);
+
+  const login = useCallback(
+    async (credentials) => {
+      const res = await api.post("/api/auth/login", credentials);
+      const session = applySession(res.data, true);
+
+      return {
+        ...res.data,
+        user: session.user,
+      };
+    },
+    [applySession],
+  );
+
+  const logout = useCallback(
+    async (role = activeRole) => {
+      try {
+        await api.post("/api/auth/logout", role ? { role } : {});
+      } catch {
+        // Local state should still clear if the server is unreachable.
+      } finally {
+        if (role) {
+          clearRole(role);
+        } else {
+          clearAuth();
+        }
+      }
+    },
+    [activeRole, clearAuth, clearRole],
+  );
+
+  const switchRole = useCallback(
+    (role) => {
+      if (users[role]) {
+        setActiveRole(role);
+        return true;
+      }
+
+      return false;
+    },
+    [users],
+  );
+
+  const isRoleLoggedIn = useCallback(
+    (role) => Boolean(users[role] && tokens[role]),
+    [tokens, users],
+  );
+
+  const value = useMemo(
+    () => ({
+      token,
+      tokens,
+      user,
+      users,
+      activeRole,
+      loading,
+      login,
+      logout,
+      refresh,
+      switchRole,
+      isRoleLoggedIn,
+      isAuthenticated: Boolean(token && user),
+    }),
+    [
+      activeRole,
+      isRoleLoggedIn,
+      loading,
+      login,
+      logout,
+      refresh,
+      switchRole,
+      token,
+      tokens,
+      user,
+      users,
+    ],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
