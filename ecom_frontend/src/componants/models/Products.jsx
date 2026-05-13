@@ -10,6 +10,8 @@ export default function Products() {
   const [loading, setloading] = useState(false);
   const [error, setError] = useState("");
   const { user } = useAuth();
+  const [wishlistItems, setWishlistItems] = useState([]);
+
   // const [cart, setcart] = useState("");
   const fetchitems = async () => {
     try {
@@ -39,19 +41,56 @@ export default function Products() {
   const wishlist = async (productId) => {
     try {
       const wishitem = { productId };
+
       const res = await api.post("/wishlist/add", {
         ...wishitem,
         role: "User",
       });
+
       console.log("success", res.data);
-      // alert("added to cart")
+
+      setWishlistItems(res.data.products);
     } catch (error) {
       setError(error.response?.data?.message || "failed to add to wishlist ");
     }
   };
 
+  // Fetch wishlist items
+  const fetchWishlist = async () => {
+    try {
+      setloading(true);
+
+      const res = await api.get("/api/wishlist", {
+        params: {
+          role: "User",
+        },
+      });
+
+      console.log("success", res.data);
+
+      setWishlistItems(res.data.products || []);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to fetch wishlist");
+    } finally {
+      setloading(false);
+    }
+  };
+
+  // Remove item from wishlist
+  const removeFromWishlist = async (productId) => {
+    try {
+      const res = await api.delete(`/wishlist/${productId}`, {
+        data: { role: "User" },
+      });
+
+      setWishlistItems(res.data.products);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to remove from wishlist");
+    }
+  };
   useEffect(() => {
     fetchitems();
+    fetchWishlist();
   }, []);
 
   const totalPages = Math.ceil(products.length / productsPerPage);
@@ -214,18 +253,37 @@ export default function Products() {
                       >
                         Add to Cart
                       </button>
+                      {(() => {
+                        const isWishlisted = wishlistItems.some(
+                          (id) => id.toString() === p._id.toString(),
+                        );
 
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          wishlist(p._id);
-                        }}
-                        className="w-full border border-[#5C4635] bg-[#1C1917] hover:bg-[#332922] text-[#F5E6D3] py-3 rounded-xl transition"
-                      >
-                        Save to Wishlist
-                      </button>
+                        return isWishlisted ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              removeFromWishlist(p._id);
+                            }}
+                            className="w-full border border-[#5C4635] text-[#C2A878] py-3 rounded-xl font-medium hover:bg-[#5C4635] transition"
+                          >
+                            Remove from Wishlist
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              wishlist(p._id);
+                            }}
+                            className="w-full border border-[#5C4635] bg-[#1C1917] hover:bg-[#332922] text-[#F5E6D3] py-3 rounded-xl transition"
+                          >
+                            Save to Wishlist
+                          </button>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>

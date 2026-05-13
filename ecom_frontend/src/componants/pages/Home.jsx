@@ -19,6 +19,9 @@ export default function Home() {
   const [count, setCartCount] = useState([]);
   const [navItems, setNavItems] = useState([]);
 
+  const [cartItems, setCartItems] = useState([]);
+  const [wishlistItems, setWishlistItems] = useState([]);
+
   const handleSwitchRole = (role) => {
     switchRole(role);
     setRoleMenuOpen(false);
@@ -130,14 +133,61 @@ export default function Home() {
 
   const currentProducts = products.slice(startIndex, endIndex);
 
+  // useEffect(() => {
+  //   fetchnavitems();
+  //   fetchProducts();
+  // }, []);
+
+  useEffect(() => {
+    fetchCartCount();
+  }, [fetchCartCount]);
+
+  //fetching
+  const fetchCartItems = async () => {
+    try {
+      const res = await api.get("/api/cart", {
+        params: { role: "User" },
+      });
+
+      setCartItems(res.data.items || []);
+    } catch (err) {
+      console.error("Failed to fetch cart items", err);
+    }
+  };
+
+  const fetchWishlistItems = async () => {
+    try {
+      const res = await api.get("/api/wishlist", {
+        params: { role: "User" },
+      });
+
+      setWishlistItems(res.data.products || []);
+    } catch (err) {
+      console.error("Failed to fetch wishlist", err);
+    }
+  };
+
+  //helper function
+  const isInCart = (productId) => {
+    return cartItems.some((item) => item.product?._id === productId);
+  };
+
+  const isInWishlist = (productId) => {
+    return wishlistItems.some((item) => item._id === productId);
+  };
+
   useEffect(() => {
     fetchnavitems();
     fetchProducts();
   }, []);
 
   useEffect(() => {
-    fetchCartCount();
-  }, [fetchCartCount]);
+    if (user?.role === "User") {
+      fetchCartItems();
+      fetchWishlistItems();
+      fetchCartCount();
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-[#1C1917] text-[#F5E6D3] flex flex-col">
@@ -171,7 +221,7 @@ export default function Home() {
       relative
       text-[#F5E6D3]
       hover:text-[#C2A878]
-      transition-colors duration-300
+       -colors duration-300
       font-medium
       pb-2
     "
@@ -208,7 +258,7 @@ export default function Home() {
     relative
     text-[#F5E6D3]
     hover:text-[#C2A878]
-    transition-colors duration-300
+     -colors duration-300
     font-medium
     pb-2
   "
@@ -520,7 +570,7 @@ export default function Home() {
                   {currentProducts.map((p) => (
                     <div
                       key={p._id}
-                      className="relative bg-[#2C241F] border border-[#5C4635] rounded-3xl overflow-hidden shadow-[0_15px_35px_rgba(0,0,0,0.35)] hover:translate-y-[-4px] transition"
+                      className="relative bg-[#2C241F] border border-[#5C4635] rounded-3xl overflow-hidden shadow-[0_15px_35px_rgba(0,0,0,0.35)] hover:translate-y-[-4px]  "
                     >
                       <Link to={`/product/${p._id}`} className="block z-0">
                         {/* Discount Badge */}
@@ -539,7 +589,7 @@ export default function Home() {
                           <img
                             src={p.image}
                             alt={p.title}
-                            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                            className="w-full h-full object-cover  -transform duration-500 hover:scale-105"
                           />
                         </div>
                         {/* </Link> */}
@@ -554,13 +604,23 @@ export default function Home() {
                             </p>
                           )}
                           {/* Title */}
-                          <h2 className="font-serif text-xl mb-2 hover:text-[#C2A878] transition line-clamp-1">
+                          <h2 className="font-serif text-xl mb-2 hover:text-[#C2A878]   line-clamp-1">
                             {p.title}
                           </h2>
                           {/* Description */}
-                          <p className="text-sm text-[#C2A878]/80 line-clamp-2 mb-4">
+                          <p
+                            className="
+    text-sm
+    text-[#C2A878]/80
+    line-clamp-2
+    leading-relaxed
+    h-11
+    overflow-hidden
+    mb-4
+  "
+                          >
                             {p.description}
-                          </p>
+                          </p>{" "}
                           {/* Price */}
                           <div className="mb-4">
                             {p.discountPercentage ? (
@@ -617,29 +677,107 @@ export default function Home() {
                           {/* Actions */}
                           {user?.role === "User" && (
                             <div className="space-y-3">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  addtocart(p._id);
-                                }}
-                                className="w-full bg-[#8B5E3C] hover:bg-[#734A2E] text-white py-3 rounded-xl font-medium transition z-100"
-                              >
-                                Add to Cart
-                              </button>
+                              <div className="flex flex-col gap-3 pt-2">
+                                {/* Cart Button */}
+                                {p.stock === 0 ? (
+                                  <button
+                                    disabled
+                                    className="
+        w-full py-3 rounded-2xl
+        bg-[#3A2F28]
+        text-[#C2A878]/50
+        font-medium
+        border border-[#5C4635]
+        cursor-not-allowed
+      "
+                                  >
+                                    Out of Stock
+                                  </button>
+                                ) : isInCart(p._id) ? (
+                                  <Link
+                                    to="/cart"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="
+        w-full text-center py-3 rounded-2xl
+        bg-gradient-to-r from-[#8B5E3C] to-[#6F4A2F]
+        hover:opacity-90
+        text-white
+        font-medium
+        transition-all duration-300
+        shadow-lg
+      "
+                                  >
+                                    View Cart
+                                  </Link>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
 
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  wishlist(p._id);
-                                }}
-                                className="w-full border border-[#5C4635] bg-[#1C1917] hover:bg-[#332922] text-[#F5E6D3] py-3 rounded-xl transition"
-                              >
-                                Save to Wishlist
-                              </button>
+                                      await addtocart(p._id);
+
+                                      fetchCartItems();
+                                      fetchCartCount();
+                                    }}
+                                    className="
+        w-full py-3 rounded-2xl
+        bg-gradient-to-r from-[#8B5E3C] to-[#6F4A2F]
+        hover:scale-[1.02]
+        hover:shadow-xl
+        text-white
+        font-medium
+        transition-all duration-300
+      "
+                                  >
+                                    Add to Cart
+                                  </button>
+                                )}
+
+                                {/* Wishlist Button */}
+                                {isInWishlist(p._id) ? (
+                                  <Link
+                                    to="/wishlist"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="
+        w-full text-center py-3 rounded-2xl
+        border border-[#7A614C]
+        bg-[#2A211C]
+        hover:bg-[#332922]
+        text-[#F5E6D3]
+        font-medium
+        transition-all duration-300
+      "
+                                  >
+                                    View Wishlist
+                                  </Link>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+
+                                      await wishlist(p._id);
+
+                                      fetchWishlistItems();
+                                    }}
+                                    className="
+        w-full py-3 rounded-2xl
+        border border-[#5C4635]
+        bg-[#1C1917]
+        hover:bg-[#332922]
+        hover:border-[#8B5E3C]
+        text-[#F5E6D3]
+        font-medium
+        transition-all duration-300
+      "
+                                  >
+                                    Save to Wishlist
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -663,7 +801,7 @@ export default function Home() {
         text-[#F5E6D3]
         disabled:opacity-40
         hover:bg-[#332922]
-        transition
+         
       "
                     >
                       Prev
@@ -684,7 +822,7 @@ export default function Home() {
           text-[#F5E6D3]
           disabled:opacity-40
           hover:bg-[#332922]
-          transition
+           
         "
                           >
                             {index + 1}
@@ -707,7 +845,7 @@ export default function Home() {
         text-[#F5E6D3]
         disabled:opacity-40
         hover:bg-[#332922]
-        transition
+         
       "
                     >
                       Next

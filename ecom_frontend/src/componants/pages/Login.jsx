@@ -12,7 +12,7 @@ function Login() {
   const [form, setForm] = useState({
     email: "",
     password: "",
-    role: "User",
+    // role: "User",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -183,7 +183,7 @@ function Login() {
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 name="email"
-                // type="email"
+                type="email"
                 autoComplete="email"
                 className="w-full px-4 py-3 rounded-xl bg-[#1C1917] border border-[#5C4635] text-[#F5E6D3] outline-none focus:border-[#C2A878]"
               />
@@ -218,7 +218,7 @@ function Login() {
             </div>
 
             {/* Role Selection */}
-            <div className="mb-6">
+            {/* <div className="mb-6">
               <label className="block mb-2 text-[#C2A878] text-sm">
                 Login As
               </label>
@@ -236,7 +236,7 @@ function Login() {
                 <option value="Vendor">Vendor</option>
                 <option value="Admin">Admin</option>
               </select>
-            </div>
+            </div> */}
 
             {/* Remember */}
             <div className="mb-8 flex justify-between items-center">

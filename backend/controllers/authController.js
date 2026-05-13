@@ -77,13 +77,13 @@ const register = async (req, res) => {
 // LOGIN
 const login = async (req, res) => {
   try {
-    const { email, password, role = "User" } = req.body;
+    const { email, password } = req.body;
 
-    if (!allowedRoles.includes(role)) {
-      return res.status(400).json({
-        message: "Invalid role",
-      });
-    }
+    // if (!allowedRoles.includes(role)) {
+    //   return res.status(400).json({
+    //     message: "Invalid role",
+    //   });
+    // }
 
     const user = await User.findOne({
       email: email.toLowerCase(),
@@ -106,6 +106,7 @@ const login = async (req, res) => {
 
     const refreshToken = generateRefreshToken(user);
 
+    // const role = user.role;
     user.refreshTokens[role] = refreshToken;
 
     await user.save();

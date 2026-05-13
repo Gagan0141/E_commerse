@@ -1,324 +1,133 @@
-const modOrder = require("../models/modOrder");
-const modOrderItem = require("../models/modOrderitem");
-const modCart = require("../models/modCart");
-const modProduct = require("../models/modProducts");
+const Order = require("../models/modOrder");
+const Cart = require("../models/modCart");
+const Product = require("../models/modProducts");
 
-// Create Order
+//user
 const createOrder = async (req, res) => {
   try {
-    const { items, shippingAddress, totalAmount } = req.body;
     const userId = req.user.id;
 
-    if (!items || items.length === 0) {
+    const { shippingAddress, paymentMethod } = req.body;
+
+    const cart = await Cart.findOne({
+      user: userId,
+    }).populate("items.product");
+
+    if (!cart || cart.items.length === 0) {
       return res.status(400).json({
         message: "Cart is empty",
       });
     }
 
-    if (!shippingAddress || !shippingAddress.street || !shippingAddress.city) {
-      return res.status(400).json({
-        message: "Shipping address is required",
+    const items = cart.items.map((item) => ({
+      product: item.product._id,
+      quantity: item.quantity,
+      price: item.product.discountPercentage
+        ? item.product.price * (1 - item.product.discountPercentage / 100)
+        : item.product.price,
+    }));
+
+    const totalPrice = items.reduce(
+      (acc, item) => acc + item.price * item.quantity,
+      0,
+    );
+
+    const order = await Order.create({
+      user: userId,
+      items,
+      totalPrice,
+      shippingAddress,
+      paymentMethod,
+      status: "pending",
+    });
+
+    cart.items = [];
+    await cart.save();
+
+    res.status(201).json({
+      message: "Order placed successfully",
+      order,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+const getMyOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({
+      user: req.user.id,
+    })
+      .populate("items.product")
+      .sort({ createdAt: -1 });
+
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+//admin
+const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate("items.product")
+      .populate("user");
+
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+const approveOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).populate("items.product");
+
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found",
       });
     }
 
-    if (!totalAmount) {
-      return res.status(400).json({
-        message: "Total amount is required",
-      });
-    }
+    for (const item of order.items) {
+      const product = await Product.findById(item.product._id);
 
-    // Create order items
-    const orderItems = [];
-    for (const item of items) {
-      const product = await modProduct.findById(item.product);
-      
-      if (!product) {
-        return res.status(404).json({
-          message: `Product ${item.product} not found`,
+      if (product.stock < item.quantity) {
+        return res.status(400).json({
+          message: `${product.title} is out of stock`,
         });
       }
 
-      const orderItem = await modOrderItem.create({
-        product: item.product,
-        quantity: item.quantity,
-        price: product.price,
-      });
+      product.stock -= item.quantity;
 
-      orderItems.push(orderItem._id);
+      await product.save();
     }
 
-    // Create order
-    const order = await modOrder.create({
-      user: userId,
-      items: orderItems,
-      shippingAddress,
-      totalAmount,
-      status: "pending",
-      paymentStatus: "pending",
-    });
+    order.status = "approved";
 
-    // Clear user's cart
-    await modCart.deleteMany({ userid: userId });
-
-    res.status(201).json({
-      orderId: order._id,
-      amount: totalAmount,
-      message: "Order created successfully",
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-};
-
-// Get User Orders
-const getUserOrders = async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    const orders = await modOrder
-      .find({ user: userId })
-      .populate({
-        path: "items",
-        populate: {
-          path: "product",
-          model: "product",
-        },
-      })
-      .sort({ createdAt: -1 });
-
-    res.json(orders || []);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-};
-
-// Get Order Details
-const getOrderDetails = async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const userId = req.user.id;
-
-    const order = await modOrder
-      .findById(orderId)
-      .populate({
-        path: "items",
-        populate: {
-          path: "product",
-          model: "product",
-        },
-      });
-
-    if (!order) {
-      return res.status(404).json({
-        message: "Order not found",
-      });
-    }
-
-    // Verify user owns this order
-    if (order.user.toString() !== userId) {
-      return res.status(403).json({
-        message: "Unauthorized",
-      });
-    }
-
-    res.json(order);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-};
-
-// Update Order Status (Admin/Vendor)
-const updateOrderStatus = async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const { status } = req.body;
-
-    if (!status) {
-      return res.status(400).json({
-        message: "Status is required",
-      });
-    }
-
-    const validStatuses = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({
-        message: "Invalid status",
-      });
-    }
-
-    const order = await modOrder.findByIdAndUpdate(
-      orderId,
-      { status },
-      { returnDocument: 'after' }
-    ).populate({
-      path: "items",
-      populate: {
-        path: "product",
-        model: "product",
-      },
-    });
-
-    if (!order) {
-      return res.status(404).json({
-        message: "Order not found",
-      });
-    }
-
-    res.json(order);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-};
-
-// Update Payment Status
-const updatePaymentStatus = async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const { paymentStatus, razorpayPaymentId, razorpayOrderId } = req.body;
-
-    if (!paymentStatus) {
-      return res.status(400).json({
-        message: "Payment status is required",
-      });
-    }
-
-    const updateData = {
-      paymentStatus,
-    };
-
-    if (razorpayPaymentId) {
-      updateData.razorpayPaymentId = razorpayPaymentId;
-    }
-
-    if (razorpayOrderId) {
-      updateData.razorpayOrderId = razorpayOrderId;
-    }
-
-    const order = await modOrder.findByIdAndUpdate(
-      orderId,
-      updateData,
-      { returnDocument: 'after' }
-    ).populate({
-      path: "items",
-      populate: {
-        path: "product",
-        model: "product",
-      },
-    });
-
-    if (!order) {
-      return res.status(404).json({
-        message: "Order not found",
-      });
-    }
-
-    res.json(order);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-};
-
-// Cancel Order
-const cancelOrder = async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const userId = req.user.id;
-
-    const order = await modOrder.findById(orderId);
-
-    if (!order) {
-      return res.status(404).json({
-        message: "Order not found",
-      });
-    }
-
-    if (order.user.toString() !== userId) {
-      return res.status(403).json({
-        message: "Unauthorized",
-      });
-    }
-
-    if (order.status !== "pending" && order.status !== "confirmed") {
-      return res.status(400).json({
-        message: "Cannot cancel order with current status",
-      });
-    }
-
-    order.status = "cancelled";
     await order.save();
 
     res.json({
-      message: "Order cancelled successfully",
+      message: "Order approved",
       order,
     });
-  } catch (error) {
+  } catch (err) {
     res.status(500).json({
-      message: error.message,
-    });
-  }
-};
-
-// Verify Payment and Update Order
-const verifyPayment = async (req, res) => {
-  try {
-    const { orderId, razorpayPaymentId, razorpaySignature } = req.body;
-
-    if (!orderId || !razorpayPaymentId || !razorpaySignature) {
-      return res.status(400).json({
-        message: "Missing payment verification data",
-      });
-    }
-
-    // Update order with payment info
-    const order = await modOrder.findByIdAndUpdate(
-      orderId,
-      {
-        paymentStatus: "paid",
-        razorpayPaymentId,
-        status: "confirmed",
-      },
-      { returnDocument: 'after' }
-    ).populate({
-      path: "items",
-      populate: {
-        path: "product",
-        model: "product",
-      },
-    });
-
-    if (!order) {
-      return res.status(404).json({
-        message: "Order not found",
-      });
-    }
-
-    res.json({
-      message: "Payment verified and order confirmed",
-      order,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
+      message: err.message,
     });
   }
 };
 
 module.exports = {
   createOrder,
-  getUserOrders,
-  getOrderDetails,
-  updateOrderStatus,
-  updatePaymentStatus,
-  cancelOrder,
-  verifyPayment,
+  getAllOrders,
+  approveOrder,
+  getMyOrders,
 };

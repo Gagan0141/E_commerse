@@ -6,7 +6,7 @@ const {
   deletenav,
 } = require("../controllers/conNav");
 const { vertoken } = require("../middleware/verifyToken");
-const authRoles = require("../middleware/authRole");
+const { authRoles } = require("../middleware/authRole");
 
 const router = express.Router();
 

@@ -9,7 +9,7 @@ export default function Checkout() {
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
-  const [paymentError, setPaymentError] = useState("");
+  const [orderError, setOrderError] = useState("");
   const [useNewAddress, setUseNewAddress] = useState(true);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
 
@@ -27,7 +27,6 @@ export default function Checkout() {
   useEffect(() => {
     fetchCart();
     fetchAddresses();
-    loadRazorpayScript();
   }, []);
 
   useEffect(() => {
@@ -35,8 +34,7 @@ export default function Checkout() {
 
     cartItems.forEach((item) => {
       const price = item.product.discountPercentage
-        ? item.product.price *
-          (1 - item.product.discountPercentage / 100)
+        ? item.product.price * (1 - item.product.discountPercentage / 100)
         : item.product.price;
 
       total += price * item.quantity;
@@ -63,7 +61,7 @@ export default function Checkout() {
     try {
       const res = await api.get("/api/address");
       setSavedAddresses(res.data || []);
-      
+
       // Auto-select default address if available
       const defaultAddress = res.data?.find((addr) => addr.isDefault);
       if (defaultAddress) {
@@ -75,108 +73,74 @@ export default function Checkout() {
     }
   };
 
-  const loadRazorpayScript = () => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    document.body.appendChild(script);
-  };
-
   const getAddressForOrder = () => {
     if (!useNewAddress && selectedAddressId) {
-      const selected = savedAddresses.find((addr) => addr._id === selectedAddressId);
+      const selected = savedAddresses.find(
+        (addr) => addr._id === selectedAddressId,
+      );
       if (selected) {
         return {
-          street: selected.street,
+          address: selected.street,
           city: selected.city,
           state: selected.state,
           pincode: selected.pincode,
           type: selected.type,
+          fullName: selected.fullName || form.fullName,
+          phone: selected.phone || form.phone,
         };
       }
     }
     return form;
   };
 
-  const initiatePayment = async () => {
+  const placeOrder = async () => {
     try {
-      setPaymentError("");
-      
+      setOrderError("");
+
       const shippingAddress = getAddressForOrder();
-      
-      // Validate address
-      if (!shippingAddress.street || !shippingAddress.city || !shippingAddress.state || !shippingAddress.pincode) {
-        setPaymentError("Please provide valid shipping address");
+
+      if (
+        !shippingAddress.address ||
+        !shippingAddress.city ||
+        !shippingAddress.state ||
+        !shippingAddress.pincode
+      ) {
+        setOrderError("Please provide valid shipping address");
         return;
       }
 
-      // If using new address, validate name and phone
       if (useNewAddress) {
         if (!form.fullName || !form.phone) {
-          setPaymentError("Please enter name and phone for new address");
+          setOrderError("Please enter name and phone");
           return;
         }
       }
 
       setPlacingOrder(true);
 
-      // Create order on backend
-      const orderRes = await api.post("/api/order/create", {
+      await api.post("/api/orders/create", {
         items: cartItems.map((item) => ({
           product: item.product._id,
           quantity: item.quantity,
         })),
+
         shippingAddress: {
           ...shippingAddress,
           fullName: form.fullName || "Customer",
           phone: form.phone || "",
         },
-        totalAmount: totalPrice,
+
+        totalPrice,
+
+        paymentMethod: "COD",
       });
 
-      const { orderId, amount } = orderRes.data;
+      alert("Order placed successfully");
 
-      // Open Razorpay Payment Modal
-      const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
-        amount: amount * 100,
-        currency: "INR",
-        name: "Your Store Name",
-        description: `Order #${orderId}`,
-        order_id: orderId,
-        handler: async (response) => {
-          try {
-            await api.post("/api/order/verify-payment", {
-              orderId,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
-            });
-
-            navigate("/orders");
-          } catch (error) {
-            setPaymentError("Payment verification failed: " + (error.response?.data?.message || error.message));
-            setPlacingOrder(false);
-          }
-        },
-        prefill: {
-          name: form.fullName,
-          contact: form.phone,
-        },
-        theme: {
-          color: "#8B5E3C",
-        },
-        modal: {
-          ondismiss: () => {
-            setPaymentError("Payment cancelled");
-            setPlacingOrder(false);
-          },
-        },
-      };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
+      navigate("/");
     } catch (error) {
-      setPaymentError("Failed to initiate payment: " + (error.response?.data?.message || error.message));
+      setOrderError(error.response?.data?.message || "Failed to place order");
+    } finally {
       setPlacingOrder(false);
     }
   };
@@ -206,10 +170,7 @@ export default function Checkout() {
       <div className="min-h-screen bg-[#1C1917] flex flex-col items-center justify-center text-[#F5E6D3]">
         <h2 className="text-2xl mb-4">No items in cart</h2>
 
-        <Link
-          to="/"
-          className="px-6 py-3 bg-[#8B5E3C] rounded-xl"
-        >
+        <Link to="/" className="px-6 py-3 bg-[#8B5E3C] rounded-xl">
           Continue Shopping
         </Link>
       </div>
@@ -219,9 +180,7 @@ export default function Checkout() {
   return (
     <div className="min-h-screen bg-[#1C1917] text-[#F5E6D3] py-12">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <h1 className="text-4xl font-serif mb-10">
-          Checkout
-        </h1>
+        <h1 className="text-4xl font-serif mb-10">Checkout</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* Shipping Form */}
@@ -231,16 +190,18 @@ export default function Checkout() {
                 Select Delivery Address
               </h2>
 
-              {paymentError && (
+              {orderError && (
                 <div className="mb-6 p-4 bg-red-900/20 border border-red-700 rounded-xl text-red-300">
-                  {paymentError}
+                  {orderError}
                 </div>
               )}
 
               {/* Saved Addresses */}
               {savedAddresses.length > 0 && (
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold mb-4">Saved Addresses</h3>
+                  <h3 className="text-lg font-semibold mb-4">
+                    Saved Addresses
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     {savedAddresses.map((address) => (
                       <div
@@ -248,11 +209,13 @@ export default function Checkout() {
                         onClick={() => handleSelectAddress(address._id)}
                         className={`p-4 border-2 rounded-xl cursor-pointer transition ${
                           selectedAddressId === address._id && !useNewAddress
-                            ? "border-[#8B5E3C] bg-[#3C2D22]"
+                            ? "border-[#C2A878] bg-[#3C2D22] shadow-[0_0_0_1px_#C2A878]"
                             : "border-[#5C4635] hover:border-[#8B5E3C]"
                         }`}
                       >
-                        <p className="font-semibold capitalize">{address.type}</p>
+                        <p className="font-semibold capitalize">
+                          {address.type}
+                        </p>
                         <p className="text-sm mt-2">{address.street}</p>
                         <p className="text-sm">
                           {address.city}, {address.state} - {address.pincode}
@@ -283,7 +246,9 @@ export default function Checkout() {
 
                 {useNewAddress && (
                   <div>
-                    <h3 className="text-lg font-semibold mb-4">Enter Shipping Details</h3>
+                    <h3 className="text-lg font-semibold mb-4">
+                      Enter Shipping Details
+                    </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <input
                         type="text"
@@ -388,9 +353,7 @@ export default function Checkout() {
           {/* Order Summary */}
           <div>
             <div className="bg-[#2C241F] border border-[#5C4635] rounded-3xl p-6 sticky top-6">
-              <h2 className="text-2xl font-serif mb-6">
-                Order Summary
-              </h2>
+              <h2 className="text-2xl font-serif mb-6">Order Summary</h2>
 
               <div className="space-y-4 mb-6">
                 {cartItems.map((item) => {
@@ -408,9 +371,7 @@ export default function Checkout() {
                         {item.product.title} × {item.quantity}
                       </span>
 
-                      <span>
-                        ₹ {(price * item.quantity).toFixed(2)}
-                      </span>
+                      <span>₹ {(price * item.quantity).toFixed(2)}</span>
                     </div>
                   );
                 })}
@@ -434,7 +395,7 @@ export default function Checkout() {
               </div>
 
               <button
-                onClick={initiatePayment}
+                onClick={placeOrder}
                 disabled={placingOrder}
                 className="
                   w-full mt-6
@@ -447,7 +408,7 @@ export default function Checkout() {
                   disabled:cursor-not-allowed
                 "
               >
-                {placingOrder ? "Processing..." : "Proceed to Payment"}
+                {placingOrder ? "Placing Order..." : "Place Order"}{" "}
               </button>
             </div>
           </div>

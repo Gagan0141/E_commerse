@@ -198,7 +198,7 @@ export default function Signup() {
               </label>
 
               <input
-                // type="email"
+                type="email"
                 value={form.email}
                 // autoComplete="email"
                 onChange={(e) => setForm({ ...form, email: e.target.value })}

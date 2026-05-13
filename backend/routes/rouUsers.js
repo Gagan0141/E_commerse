@@ -12,7 +12,7 @@ const {
 
 const { vertoken } = require("../middleware/verifyToken");
 
-const authRoles = require("../middleware/authRole");
+const { authRoles } = require("../middleware/authRole");
 
 // optional if you still want direct user creation
 // router.post(
