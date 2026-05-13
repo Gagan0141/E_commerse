@@ -5,7 +5,7 @@ const {
   soft_delete,
   updatecat,
 } = require("../controllers/conAllCategories");
-const authRoles = require("../middleware/authRole");
+const { authRoles } = require("../middleware/authRole");
 const { vertoken } = require("../middleware/verifyToken");
 const router = express.Router();
 

@@ -4,7 +4,7 @@ const router = express.Router();
 const Product = require("../models/modProducts");
 const Category = require("../models/modCategory");
 const { vertoken } = require("../middleware/verifyToken");
-const authRoles = require("../middleware/authRole");
+const { authRoles } = require("../middleware/authRole");
 const {
   createproduct,
   getallproducts,

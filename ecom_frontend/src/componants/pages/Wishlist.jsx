@@ -4,14 +4,14 @@ import { Link } from "react-router-dom";
 
 export default function Wishlist() {
   const [wishlistItems, setWishlistItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [loading, setloading] = useState(false);
+  const [Error, setError] = useState("");
   const [cartItems, setCartItems] = useState([]);
 
   // Fetch wishlist items
   const fetchWishlist = async () => {
     try {
-      setLoading(true);
+      setloading(true);
       const res = await api.get("/api/wishlist", {
         params: {
           role: "User",
@@ -21,7 +21,7 @@ export default function Wishlist() {
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch wishlist");
     } finally {
-      setLoading(false);
+      setloading(false);
     }
   };
 
@@ -31,7 +31,7 @@ export default function Wishlist() {
       const res = await api.get("/api/cart");
       setCartItems(res.data.products || []);
     } catch (err) {
-      console.error("Failed to fetch cart items:", err);
+      console.Error("Failed to fetch cart items:", err);
     }
   };
 
@@ -105,9 +105,9 @@ const removeFromWishlist = async (productId) => {
         )}
 
         {/* Error */}
-        {error && (
+        {Error && (
           <div className="bg-[#A26769]/10 border border-[#A26769]/30 text-[#F5E6D3] p-4 rounded-xl mb-6">
-            {error}
+            {Error}
           </div>
         )}
 

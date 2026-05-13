@@ -3,6 +3,7 @@ import api from "../api/axios";
 // import TopNavbar from "../navbar/TopNavbar";
 import { useAuth } from "../utils/Auth";
 import Address from "../models/Address";
+import MyOrders from "../user_tabs/MyOrders";
 
 export default function User() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -172,6 +173,7 @@ export default function User() {
               </div>
             </>
           )}
+          {activeTab === "orders" && <MyOrders />}
 
           {activeTab === "account" && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">

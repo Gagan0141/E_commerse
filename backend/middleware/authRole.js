@@ -10,4 +10,6 @@ const authRoles = (...roles) => {
   };
 };
 
-module.exports = authRoles;
+module.exports = {
+  authRoles,
+};

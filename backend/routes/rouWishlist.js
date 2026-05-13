@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const authRoles = require("../middleware/authRole");
+const { authRoles } = require("../middleware/authRole");
 const {
   addToWishlist,
   removeFromWishlist,

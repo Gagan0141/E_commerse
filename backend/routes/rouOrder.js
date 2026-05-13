@@ -1,30 +1,25 @@
 const express = require("express");
-const router = express.Router();
 
-const { vertoken } = require("../middleware/verifyToken");
-const authRoles = require("../middleware/authRole");
+const router = express.Router();
 
 const {
   createOrder,
-  getUserOrders,
-  getOrderDetails,
-  updateOrderStatus,
-  updatePaymentStatus,
-  cancelOrder,
-  verifyPayment,
+  getAllOrders,
+  approveOrder,
+  getMyOrders,
 } = require("../controllers/conOrder");
 
-// User routes
+const { vertoken } = require("../middleware/verifyToken");
+
+const { authRoles } = require("../middleware/authRole");
+//user
 router.post("/create", vertoken, authRoles("User"), createOrder);
-router.get("/user", vertoken, authRoles("User"), getUserOrders);
-router.get("/:orderId", vertoken, authRoles("User"), getOrderDetails);
-router.post("/cancel/:orderId", vertoken, authRoles("User"), cancelOrder);
 
-// Payment verification
-router.post("/verify-payment", vertoken, authRoles("User"), verifyPayment);
+router.get("/my", vertoken, authRoles("User"), getMyOrders);
 
-// Admin/Vendor routes (for order management)
-router.patch("/:orderId/status", vertoken, updateOrderStatus);
-router.patch("/:orderId/payment-status", vertoken, updatePaymentStatus);
+//admin
+router.get("/", vertoken, authRoles("Admin"), getAllOrders);
+
+router.put("/approve/:id", vertoken, authRoles("Admin"), approveOrder);
 
 module.exports = router;

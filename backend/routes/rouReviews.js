@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const authRoles = require("../middleware/authRole");
+const { authRoles } = require("../middleware/authRole");
 const { vertoken } = require("../middleware/verifyToken");
 
 const {

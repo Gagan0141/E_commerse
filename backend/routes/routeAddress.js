@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const { vertoken } = require("../middleware/verifyToken");
-const authRoles = require("../middleware/authRole");
+const { authRoles } = require("../middleware/authRole");
 
 const {
   createAddress,

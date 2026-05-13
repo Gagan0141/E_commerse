@@ -10,148 +10,148 @@ const getModelByRole = (role) => {
   return userModel;
 };
 
-// signup
-const create_user = async (req, res) => {
-  try {
-    const { name, email, password, role } = req.body;
+// // signup
+// const create_user = async (req, res) => {
+//   try {
+//     const { name, email, password, role } = req.body;
 
-    const Model = getModelByRole(role);
+//     const Model = getModelByRole(role);
 
-    if (!Model) {
-      return res.status(400).json({
-        message: "Invalid role",
-      });
-    }
+//     if (!Model) {
+//       return res.status(400).json({
+//         message: "Invalid role",
+//       });
+//     }
 
-    const emailLower = email.toLowerCase();
+//     const emailLower = email.toLowerCase();
 
-    // check only inside selected role
-    const exists = await Model.findOne({
-      email: emailLower,
-    });
+//     // check only inside selected role
+//     const exists = await Model.findOne({
+//       email: emailLower,
+//     });
 
-    if (exists) {
-      return res.status(400).json({
-        message: `${role} email already exists`,
-      });
-    }
+//     if (exists) {
+//       return res.status(400).json({
+//         message: `${role} email already exists`,
+//       });
+//     }
 
-    const new_password = await bcrypt.hash(password, 10);
+//     const new_password = await bcrypt.hash(password, 10);
 
-    const data = await Model.create({
-      name,
-      email: emailLower,
-      password: new_password,
-      role,
-    });
+//     const data = await Model.create({
+//       name,
+//       email: emailLower,
+//       password: new_password,
+//       role,
+//     });
 
-    return res.status(201).json(data);
-  } catch (err) {
-    return res.status(500).json({
-      message: err.message,
-    });
-  }
-};
+//     return res.status(201).json(data);
+//   } catch (err) {
+//     return res.status(500).json({
+//       message: err.message,
+//     });
+//   }
+// };
 
-// login
-const login = async (req, res) => {
-  try {
-    const { email, password, role } = req.body;
+// // login
+// const login = async (req, res) => {
+//   try {
+//     const { email, password, role } = req.body;
 
-    const Model = getModelByRole(role);
+//     const Model = getModelByRole(role);
 
-    if (!Model) {
-      return res.status(400).json({
-        message: "Invalid role",
-      });
-    }
+//     if (!Model) {
+//       return res.status(400).json({
+//         message: "Invalid role",
+//       });
+//     }
 
-    const user = await Model.findOne({
-      email: email.toLowerCase(),
-    });
+//     const user = await Model.findOne({
+//       email: email.toLowerCase(),
+//     });
 
-    if (!user) {
-      return res.status(400).json({
-        message: `${role} not found`,
-      });
-    }
+//     if (!user) {
+//       return res.status(400).json({
+//         message: `${role} not found`,
+//       });
+//     }
 
-    const ismatch = await bcrypt.compare(password, user.password);
+//     const ismatch = await bcrypt.compare(password, user.password);
 
-    if (!ismatch) {
-      return res.status(401).json({
-        message: "Wrong password",
-      });
-    }
+//     if (!ismatch) {
+//       return res.status(401).json({
+//         message: "Wrong password",
+//       });
+//     }
 
-    const token = generateAccessToken(user);
+//     const token = generateAccessToken(user);
 
-    return res.json({
-      accessToken: token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  } catch (err) {
-    return res.status(500).json({
-      message: err.message,
-    });
-  }
-};
+//     return res.json({
+//       accessToken: token,
+//       user: {
+//         id: user._id,
+//         name: user.name,
+//         email: user.email,
+//         role: user.role,
+//       },
+//     });
+//   } catch (err) {
+//     return res.status(500).json({
+//       message: err.message,
+//     });
+//   }
+// };
 
-// logout
-const logout = async (req, res) => {
-  try {
-    return res.json({
-      message: "Logged out successfully",
-    });
-  } catch (err) {
-    return res.status(500).json({
-      message: err.message,
-    });
-  }
-};
+// // logout
+// const logout = async (req, res) => {
+//   try {
+//     return res.json({
+//       message: "Logged out successfully",
+//     });
+//   } catch (err) {
+//     return res.status(500).json({
+//       message: err.message,
+//     });
+//   }
+// };
 
-// current user
-const me = async (req, res) => {
-  try {
-    const { id, role } = req.user;
+// // current user
+// const me = async (req, res) => {
+//   try {
+//     const { id, role } = req.user;
 
-    const Model = getModelByRole(role);
+//     const Model = getModelByRole(role);
 
-    if (!Model) {
-      return res.status(404).json({
-        message: "No user found",
-      });
-    }
+//     if (!Model) {
+//       return res.status(404).json({
+//         message: "No user found",
+//       });
+//     }
 
-    const user = await Model.findById(id).select("-password");
+//     const user = await Model.findById(id).select("-password");
 
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
-    }
+//     if (!user) {
+//       return res.status(404).json({
+//         message: "User not found",
+//       });
+//     }
 
-    // If user role, also fetch their addresses
-    let userWithAddresses = user.toObject();
+//     // If user role, also fetch their addresses
+//     let userWithAddresses = user.toObject();
     
-    if (role === "User") {
-      const modAddress = require("../models/modaddress");
-      const addresses = await modAddress.find({ userid: id });
-      userWithAddresses.addresses = addresses;
-    }
+//     if (role === "User") {
+//       const modAddress = require("../models/modaddress");
+//       const addresses = await modAddress.find({ userid: id });
+//       userWithAddresses.addresses = addresses;
+//     }
 
-    return res.json(userWithAddresses);
-  } catch (error) {
-    return res.status(500).json({
-      message: error.message,
-    });
-  }
-};
+//     return res.json(userWithAddresses);
+//   } catch (error) {
+//     return res.status(500).json({
+//       message: error.message,
+//     });
+//   }
+// };
 
 // for admin
 
@@ -305,10 +305,10 @@ const selfUpdateAccount = async (req, res) => {
 };
 
 module.exports = {
-  create_user,
-  login,
-  logout,
-  me,
+  // create_user,
+  // login,
+  // logout,
+  // me,
   getCustomers,
   getVendors,
   updateAccount,

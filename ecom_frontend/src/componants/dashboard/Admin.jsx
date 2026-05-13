@@ -9,10 +9,11 @@ import NavItemsDashboard from "../models/NavItemsDashboard";
 import CategoriesDashboard from "../models/CategoriesDashboard";
 import CustomersDashboard from "../models/CustomersDashboard";
 import VendorsDashboard from "../models/VendorsDashboard";
+import Orders from "../admin_tabs/Orders";
 
 export default function Admin() {
   const [activeModal, setactiveModal] = useState(null);
-  const [activeTab, setActiveTab] = useState("Nav control");
+  const [activeTab, setActiveTab] = useState("orders");
   const [loading, setloading] = useState(false);
 
   const { user, logout } = useAuth();
@@ -337,13 +338,13 @@ export default function Admin() {
 
               {/* ORDERS */}
               {activeTab === "orders" && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-6">Orders</h2>
+                // <div>
+                //   <h2 className="text-xl font-semibold mb-6">Orders</h2>
 
-                  <div className="rounded-2xl border border-slate-200 p-6 bg-slate-50 text-slate-500">
-                    Orders table (status, payment, user, total)
-                  </div>
-                </div>
+                    <Orders />
+                //   <div className="rounded-2xl border border-slate-200 p-6 bg-slate-50 text-slate-500">
+                //   </div>
+                // </div>
               )}
 
               {/* CUSTOMERS */}
