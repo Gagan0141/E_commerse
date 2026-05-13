@@ -23,7 +23,7 @@ export default function NavItemsDashboard() {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/nav");
+      const res = await api.get("/api/nav");
       setNavItems(res.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch nav items");
@@ -34,7 +34,7 @@ export default function NavItemsDashboard() {
 
   const fetchCategories = async () => {
     try {
-      const res = await api.get("/cat");
+      const res = await api.get("/api/cat");
       setCategories(res.data);
     } catch (err) {
       console.error(err);
@@ -43,7 +43,7 @@ export default function NavItemsDashboard() {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/nav/${id}`, {
+      await api.delete(`/api/nav/${id}`, {
         data: {
           role: user.role,
         },
@@ -72,7 +72,7 @@ export default function NavItemsDashboard() {
     try {
       setSaving(true);
 
-      const res = await api.patch(`/nav/${id}`, {
+      const res = await api.patch(`/api/nav/${id}`, {
         ...editData,
         role: user.role,
       });

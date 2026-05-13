@@ -1,6 +1,6 @@
 const userModel = require("../models/modUser");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
+const { generateAccessToken } = require("../utils/generateTokens");
 
 // helper
 const getModelByRole = (role) => {
@@ -8,22 +8,6 @@ const getModelByRole = (role) => {
     return null;
   }
   return userModel;
-};
-
-const getCookieName = (role) => {
-  switch (role) {
-    case "User":
-      return "userToken";
-
-    case "Vendor":
-      return "vendorToken";
-
-    case "Admin":
-      return "adminToken";
-
-    default:
-      throw new Error("Invalid role");
-  }
 };
 
 // signup
@@ -100,25 +84,7 @@ const login = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      {
-        id: user._id,
-        role: user.role,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "7d",
-      },
-    );
-
-    const cookieName = getCookieName(role);
-
-    res.cookie(cookieName, token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: false,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    const token = generateAccessToken(user);
 
     return res.json({
       accessToken: token,
@@ -139,32 +105,8 @@ const login = async (req, res) => {
 // logout
 const logout = async (req, res) => {
   try {
-    // Get role from decoded token (set by verifyToken middleware)
-    // Or from request body for cases where we want to logout a specific role
-    const role = req.body?.role || req.user?.role;
-
-    if (!role) {
-      return res.status(400).json({
-        message: "Role is required",
-      });
-    }
-
-    const cookieName = getCookieName(role);
-
-    if (!cookieName) {
-      return res.status(400).json({
-        message: "Invalid role",
-      });
-    }
-
-    res.clearCookie(cookieName, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: false,
-    });
-
     return res.json({
-      message: `Logged out successfully from ${role}`,
+      message: "Logged out successfully",
     });
   } catch (err) {
     return res.status(500).json({

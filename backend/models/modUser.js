@@ -7,44 +7,68 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
     email: {
       type: String,
       required: true,
       unique: true,
       lowercase: true,
+      trim: true,
     },
+
     password: {
       type: String,
       required: true,
     },
+
     phone: {
       type: String,
-      required: false,
+      unique: true,
+      sparse: true,
+      default: null,
     },
+
     role: {
       type: String,
       enum: ["User", "Admin", "Vendor"],
       default: "User",
     },
+
     isactive: {
       type: Boolean,
       default: true,
     },
+
     profileImage: {
       type: String,
-      required: false,
+      default: null,
     },
+
     isverified: {
       type: Boolean,
       default: false,
     },
-    refreshToken: {
-      type: String,
+
+    refreshTokens: {
+      User: {
+        type: String,
+        default: null,
+      },
+
+      Vendor: {
+        type: String,
+        default: null,
+      },
+
+      Admin: {
+        type: String,
+        default: null,
+      },
     },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("User", userSchema);

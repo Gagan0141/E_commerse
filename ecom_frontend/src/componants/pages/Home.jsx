@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { IoMdCart } from "react-icons/io";
 import { CgProfile } from "react-icons/cg";
@@ -9,7 +9,7 @@ import api from "../api/axios";
 import Crousel from "../navbar/Crousel";
 
 export default function Home() {
-  const { user, users, logout, refresh } = useAuth();
+  const { user, users, logout, switchRole } = useAuth();
 
   const [active, setActive] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -19,9 +19,8 @@ export default function Home() {
   const [count, setCartCount] = useState([]);
   const [navItems, setNavItems] = useState([]);
 
-  const switchRole = (role) => {
-    localStorage.setItem("activeRole", role);
-    refresh();
+  const handleSwitchRole = (role) => {
+    switchRole(role);
     setRoleMenuOpen(false);
   };
 
@@ -34,15 +33,18 @@ export default function Home() {
     }
   };
 
-  const fetchCartCount = async () => {
-    // if (user === "User") {
+  const fetchCartCount = useCallback(async () => {
+    if (user?.role !== "User") {
+      setCartCount(0);
+      return;
+    }
+
     const res = await api.get("/api/cart/count", {
       params: { role: "User" },
     });
 
     setCartCount(res.data.count);
-    // }
-  };
+  }, [user]);
 
   //search
   const [products, setProducts] = useState([]);
@@ -130,9 +132,12 @@ export default function Home() {
 
   useEffect(() => {
     fetchnavitems();
-    fetchCartCount();
     fetchProducts();
   }, []);
+
+  useEffect(() => {
+    fetchCartCount();
+  }, [fetchCartCount]);
 
   return (
     <div className="min-h-screen bg-[#1C1917] text-[#F5E6D3] flex flex-col">
@@ -274,7 +279,7 @@ export default function Home() {
                             <button
                               key={role}
                               type="button"
-                              onClick={() => switchRole(role)}
+                              onClick={() => handleSwitchRole(role)}
                               className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                                 user?.role === role
                                   ? "bg-[#8B5E3C] text-[#F5E6D3]"

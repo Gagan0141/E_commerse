@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { IoMdCart } from "react-icons/io";
 import { CgProfile } from "react-icons/cg";
@@ -9,7 +9,7 @@ import api from "../api/axios";
 // import MultiRoleMenu from "./MultiRoleMenu";
 
 export default function TopNavbar() {
-  const { user, users, logout, refresh } = useAuth();
+  const { user, users, logout, switchRole } = useAuth();
 
   const [active, setActive] = useState("For You");
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -19,9 +19,8 @@ export default function TopNavbar() {
   const [count, setCartCount] = useState([]);
   const [navItems, setNavItems] = useState([]);
 
-  const switchRole = (role) => {
-    localStorage.setItem("activeRole", role);
-    refresh();
+  const handleSwitchRole = (role) => {
+    switchRole(role);
     setRoleMenuOpen(false);
   };
 
@@ -34,20 +33,26 @@ export default function TopNavbar() {
     }
   };
 
-  const fetchCartCount = async () => {
-    // if (user === "User") {
+  const fetchCartCount = useCallback(async () => {
+    if (user?.role !== "User") {
+      setCartCount(0);
+      return;
+    }
+
       const res = await api.get("/api/cart/count", {
         params: { role: "User" },
       });
 
       setCartCount(res.data.count);
-    // }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchnavitems();
-    fetchCartCount();
   }, []);
+
+  useEffect(() => {
+    fetchCartCount();
+  }, [fetchCartCount]);
 
   return (
     <nav className="w-full sticky top-0 z-50 bg-[#2C241F]/95 backdrop-blur-md border-b border-[#5C4635] shadow-lg">
@@ -150,7 +155,7 @@ export default function TopNavbar() {
                         <button
                           key={role}
                           type="button"
-                          onClick={() => switchRole(role)}
+                          onClick={() => handleSwitchRole(role)}
                           className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                             user?.role === role
                               ? "bg-[#8B5E3C] text-[#F5E6D3]"

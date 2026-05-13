@@ -1,4 +1,4 @@
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 const User = require("../models/modUser");
@@ -8,18 +8,45 @@ const {
   generateRefreshToken,
 } = require("../utils/generateTokens");
 
+const allowedRoles = ["User", "Vendor", "Admin"];
+
+const getRefreshCookieName = (role) => `refreshToken_${role}`;
+
+const refreshCookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+  maxAge: 30 * 24 * 60 * 60 * 1000,
+};
+
+const clearRefreshCookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+};
+
+const toClientUser = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+});
+
+const toSession = (user) => ({
+  accessToken: generateAccessToken(user),
+  user: toClientUser(user),
+});
+
 // REGISTER
 const register = async (req, res) => {
   try {
-    const {
-      name,
-      email,
-      password,
-      role,
-    } = req.body;
+    const { name, email, password, role } = req.body;
 
-    const existingUser =
-      await User.findOne({ email });
+    const safeRole = role === "Vendor" ? "Vendor" : "User";
+
+    const existingUser = await User.findOne({
+      email: email.toLowerCase(),
+    });
 
     if (existingUser) {
       return res.status(400).json({
@@ -27,19 +54,18 @@ const register = async (req, res) => {
       });
     }
 
-    const hashedPassword =
-      await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
       name,
-      email,
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
-      role,
+      role: safeRole,
     });
 
     res.status(201).json({
-      message: "User created",
-      user,
+      message: "User created successfully",
+      user: toClientUser(user),
     });
   } catch (error) {
     res.status(500).json({
@@ -51,11 +77,17 @@ const register = async (req, res) => {
 // LOGIN
 const login = async (req, res) => {
   try {
-    const { email, password } =
-      req.body;
+    const { email, password, role = "User" } = req.body;
+
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({
+        message: "Invalid role",
+      });
+    }
 
     const user = await User.findOne({
-      email,
+      email: email.toLowerCase(),
+      role,
     });
 
     if (!user) {
@@ -64,11 +96,7 @@ const login = async (req, res) => {
       });
     }
 
-    const isMatch =
-      await bcrypt.compare(
-        password,
-        user.password
-      );
+    const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(400).json({
@@ -76,37 +104,15 @@ const login = async (req, res) => {
       });
     }
 
-    const accessToken =
-      generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    const refreshToken =
-      generateRefreshToken(user);
-
-    user.refreshToken = refreshToken;
+    user.refreshTokens[role] = refreshToken;
 
     await user.save();
 
-    res.cookie(
-      "refreshToken",
-      refreshToken,
-      {
-        httpOnly: true,
-        secure: false,
-        sameSite: "strict",
-        maxAge:
-          30 * 24 * 60 * 60 * 1000,
-      }
-    );
+    res.cookie(getRefreshCookieName(role), refreshToken, refreshCookieOptions);
 
-    res.json({
-      accessToken,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
+    res.json(toSession(user));
   } catch (error) {
     res.status(500).json({
       message: error.message,
@@ -115,47 +121,92 @@ const login = async (req, res) => {
 };
 
 // REFRESH TOKEN
-const refreshToken = async (
-  req,
-  res
-) => {
+const refreshToken = async (req, res) => {
   try {
-    const token =
-      req.cookies.refreshToken;
+    const { role } = req.body || {};
 
-    if (!token) {
-      return res.status(403).json({
-        message: "Unauthorized",
-      });
+    const refreshRole = async (currentRole) => {
+      try {
+        const token = req.cookies[getRefreshCookieName(currentRole)];
+
+        if (!token) return null;
+
+        const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+
+        if (decoded.role !== currentRole) {
+          return null;
+        }
+
+        const user = await User.findOne({
+          _id: decoded.id,
+          role: currentRole,
+        });
+
+        if (!user || user.refreshTokens?.[currentRole] !== token) {
+          return null;
+        }
+
+        const newRefreshToken = generateRefreshToken(user);
+
+        user.refreshTokens[currentRole] = newRefreshToken;
+
+        await user.save();
+
+        res.cookie(
+          getRefreshCookieName(currentRole),
+          newRefreshToken,
+          refreshCookieOptions,
+        );
+
+        return {
+          accessToken: generateAccessToken(user),
+          user: toClientUser(user),
+        };
+      } catch {
+        return null;
+      }
+    };
+
+    if (role) {
+      if (!allowedRoles.includes(role)) {
+        return res.status(400).json({
+          message: "Invalid role",
+        });
+      }
+
+      const session = await refreshRole(role);
+
+      if (!session) {
+        return res.status(401).json({
+          message: "Invalid refresh token",
+        });
+      }
+
+      return res.json(session);
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.REFRESH_TOKEN_SECRET
-    );
+    const sessions = [];
 
-    const user = await User.findById(
-      decoded.id
-    );
+    for (const currentRole of allowedRoles) {
+      const session = await refreshRole(currentRole);
 
-    if (
-      !user ||
-      user.refreshToken !== token
-    ) {
-      return res.status(403).json({
-        message: "Unauthorized",
-      });
+      if (session) {
+        sessions.push(session);
+      }
     }
 
-    const accessToken =
-      generateAccessToken(user);
+    if (sessions.length === 0) {
+      return res.status(401).json({
+        message: "No refresh token provided",
+      });
+    }
 
     res.json({
-      accessToken,
+      sessions,
     });
   } catch {
-    res.status(403).json({
-      message: "Unauthorized",
+    res.status(401).json({
+      message: "Invalid refresh token",
     });
   }
 };
@@ -163,23 +214,48 @@ const refreshToken = async (
 // LOGOUT
 const logout = async (req, res) => {
   try {
-    const token =
-      req.cookies.refreshToken;
+    const { role } = req.body || {};
 
-    if (token) {
-      const user =
-        await User.findOne({
-          refreshToken: token,
-        });
+    const logoutRole = async (currentRole) => {
+      const token = req.cookies[getRefreshCookieName(currentRole)];
+
+      if (!token) {
+        res.clearCookie(
+          getRefreshCookieName(currentRole),
+          clearRefreshCookieOptions,
+        );
+        return;
+      }
+
+      const user = await User.findOne({
+        [`refreshTokens.${currentRole}`]: token,
+      });
 
       if (user) {
-        user.refreshToken = null;
+        user.refreshTokens[currentRole] = null;
 
         await user.save();
       }
-    }
 
-    res.clearCookie("refreshToken");
+      res.clearCookie(
+        getRefreshCookieName(currentRole),
+        clearRefreshCookieOptions,
+      );
+    };
+
+    if (role) {
+      if (!allowedRoles.includes(role)) {
+        return res.status(400).json({
+          message: "Invalid role",
+        });
+      }
+
+      await logoutRole(role);
+    } else {
+      for (const currentRole of allowedRoles) {
+        await logoutRole(currentRole);
+      }
+    }
 
     res.json({
       message: "Logged out",
@@ -194,17 +270,17 @@ const logout = async (req, res) => {
 // CURRENT USER
 const me = async (req, res) => {
   try {
-    const user = await User.findById(
-      req.user.id
-    ).select("-password -refreshToken");
+    const user = await User.findById(req.user.id).select(
+      "-password -refreshTokens",
+    );
 
-    const accessToken =
-      generateAccessToken(user);
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
 
-    res.json({
-      user,
-      accessToken,
-    });
+    res.json(user);
   } catch (error) {
     res.status(500).json({
       message: error.message,

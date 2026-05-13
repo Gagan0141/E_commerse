@@ -44,24 +44,39 @@ const removeFromWishlist = async (req, res) => {
     const { productId } = req.params;
 
     if (!productId) {
-      return res.status(400).json({ message: "Product ID is required" });
+      return res.status(400).json({
+        message: "Product ID is required",
+      });
     }
 
-    const wishlist = await modWishlist.findOne({ user: req.user.id });
+    const wishlist = await modWishlist.findOne({
+      user: req.user.id,
+    });
 
     if (!wishlist) {
-      return res.status(404).json({ message: "Wishlist not found" });
+      return res.status(404).json({
+        message: "Wishlist not found",
+      });
     }
 
-    // Remove product from wishlist
     wishlist.products = wishlist.products.filter(
-      (p) => p.toString() !== productId,
+      (p) => p.toString() !== productId.toString(),
     );
 
     await wishlist.save();
-    res.json(wishlist);
+
+    const updatedWishlist = await modWishlist
+      .findById(wishlist._id)
+      .populate("products");
+
+    res.status(200).json({
+      message: "Removed from wishlist",
+      products: updatedWishlist.products,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: error.message,
+    });
   }
 };
 

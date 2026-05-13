@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "./api/axios";
 import TopNavbar from "./navbar/TopNavbar";
 import Review from "./models/Review";
@@ -8,19 +8,69 @@ import { useAuth } from "./utils/Auth";
 export default function ProductDetails() {
   const { id } = useParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [product, setProduct] = useState(null);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState("");
 
-  useEffect(() => {
-    fetchProduct();
-  }, [id]);
-
-  const fetchProduct = async () => {
+  const fetchProduct = useCallback(async () => {
     try {
-      const res = await api.get(`/product/${id}`);
+      const res = await api.get(`/api/product/${id}`);
       setProduct(res.data);
     } catch (err) {
       console.error(err);
+      setError(err.response?.data?.message || "Failed to load product");
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchProduct();
+  }, [fetchProduct]);
+
+  const requireUser = () => {
+    if (user?.role === "User") return true;
+
+    navigate("/login", {
+      state: { from: location },
+      replace: false,
+    });
+
+    return false;
+  };
+
+  const addToCart = async () => {
+    if (!requireUser()) return;
+
+    try {
+      setSaving("cart");
+      setError("");
+      await api.post("/api/cart/add", {
+        productId: product._id,
+        role: "User",
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to add to cart");
+    } finally {
+      setSaving("");
+    }
+  };
+
+  const addToWishlist = async () => {
+    if (!requireUser()) return;
+
+    try {
+      setSaving("wishlist");
+      setError("");
+      await api.post("/api/wishlist/add", {
+        productId: product._id,
+        role: "User",
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to add to wishlist");
+    } finally {
+      setSaving("");
     }
   };
 
@@ -98,8 +148,17 @@ export default function ProductDetails() {
               </p>
             )}
             {/* Actions */}
+            {error && (
+              <div className="mb-5 rounded-xl border border-[#A26769]/40 bg-[#A26769]/10 px-4 py-3 text-sm text-[#F5E6D3]">
+                {error}
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row gap-4">
               <button
+                type="button"
+                onClick={addToCart}
+                disabled={saving === "cart"}
                 className="
                   flex-1
                   px-6 py-4
@@ -109,12 +168,16 @@ export default function ProductDetails() {
                   text-white
                   font-medium
                   transition
+                  disabled:opacity-60
                 "
               >
-                Add to Cart
+                {saving === "cart" ? "Adding..." : "Add to Cart"}
               </button>
 
               <button
+                type="button"
+                onClick={addToWishlist}
+                disabled={saving === "wishlist"}
                 className="
                   flex-1
                   px-6 py-4
@@ -124,9 +187,10 @@ export default function ProductDetails() {
                   rounded-xl
                   text-[#F5E6D3]
                   transition
+                  disabled:opacity-60
                 "
               >
-                Save to Wishlist
+                {saving === "wishlist" ? "Saving..." : "Save to Wishlist"}
               </button>
             </div>
             {/* Details */}

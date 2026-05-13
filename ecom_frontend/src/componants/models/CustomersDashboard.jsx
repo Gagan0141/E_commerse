@@ -31,7 +31,7 @@ export default function CustomersDashboard() {
     try {
       setIsLoading(true);
 
-      const res = await api.get("/api/auth/customers");
+      const res = await api.get("/api/users/customers");
 
       setCustomers(res.data);
     } catch (err) {
@@ -46,7 +46,7 @@ export default function CustomersDashboard() {
       return;
 
     try {
-      await api.delete(`/api/auth/${id}`, {
+      await api.delete(`/api/users/${id}`, {
         data: { role: user.role },
       });
 
@@ -69,9 +69,12 @@ export default function CustomersDashboard() {
 
   const handleUpdate = async (id) => {
     try {
-      const res = await api.patch(`/api/auth/${id}`, editData);
+      const res = await api.patch(`/api/users/${id}`, editData);
+      const updatedCustomer = res.data.data || res.data;
 
-      setCustomers((prev) => prev.map((c) => (c._id === id ? res.data : c)));
+      setCustomers((prev) =>
+        prev.map((c) => (c._id === id ? updatedCustomer : c)),
+      );
 
       setEditId(null);
     } catch (err) {

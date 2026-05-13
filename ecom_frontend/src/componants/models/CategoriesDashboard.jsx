@@ -32,7 +32,7 @@ export default function CategoriesDashboard() {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/cat/${id}`, {
+      await api.delete(`/api/cat/${id}`, {
         data: {
           role: user.role,
         },
@@ -60,7 +60,7 @@ export default function CategoriesDashboard() {
     try {
       setSaving(true);
 
-      const res = await api.patch(`/cat/${id}`, {
+      const res = await api.patch(`/api/cat/${id}`, {
         ...editData,
         role: user.role,
       });
