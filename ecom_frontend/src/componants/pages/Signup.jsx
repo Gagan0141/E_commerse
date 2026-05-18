@@ -31,7 +31,6 @@ export default function Signup() {
       setLoading(true);
       setError("");
 
-      console.log("Signup payload:", form);
       await api.post("/api/auth/signup", form, {
         headers: {
           "Content-Type": "application/json",
@@ -40,7 +39,7 @@ export default function Signup() {
       });
       navigate("/login"); // redirect after signup
     } catch (err) {
-      console.error("Signup error:", err.response?.data || err);
+      // Error during signup
       const apiError = err.response?.data;
       const message =
         typeof apiError === "string"

@@ -10,7 +10,7 @@ const {
   selfUpdateAccount,
 } = require("../controllers/conUser");
 
-const { vertoken } = require("../middleware/verifyToken");
+const { verifyAccessToken } = require("../middleware/verifyToken");
 
 const { authRoles } = require("../middleware/authRole");
 
@@ -21,15 +21,15 @@ const { authRoles } = require("../middleware/authRole");
 // );
 
 // self update
-router.patch("/update", vertoken, selfUpdateAccount);
+router.patch("/update", verifyAccessToken, selfUpdateAccount);
 
 // admin routes
-router.get("/customers", vertoken, authRoles("Admin"), getCustomers);
+router.get("/customers", verifyAccessToken, authRoles("Admin"), getCustomers);
 
-router.get("/vendors", vertoken, authRoles("Admin"), getVendors);
+router.get("/vendors", verifyAccessToken, authRoles("Admin"), getVendors);
 
-router.patch("/:id", vertoken, authRoles("Admin"), updateAccount);
+router.patch("/:id", verifyAccessToken, authRoles("Admin"), updateAccount);
 
-router.delete("/:id", vertoken, authRoles("Admin"), deleteAccount);
+router.delete("/:id", verifyAccessToken, authRoles("Admin"), deleteAccount);
 
 module.exports = router;

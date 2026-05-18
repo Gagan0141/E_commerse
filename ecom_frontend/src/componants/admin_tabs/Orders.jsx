@@ -11,7 +11,11 @@ export default function Orders() {
     try {
       setLoading(true);
 
-      const res = await api.get("/api/orders");
+      const res = await api.get("/order", {
+        headers: {
+          "x-role": "Admin",
+        },
+      });
 
       setOrders(res.data || []);
     } catch (err) {
@@ -29,7 +33,7 @@ export default function Orders() {
     try {
       setApprovingId(id);
 
-      await api.put(`/api/orders/approve/${id}`);
+      await api.put(`/order/approve/${id}`);
 
       setOrders((prev) =>
         prev.map((order) =>

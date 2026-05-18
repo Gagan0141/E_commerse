@@ -3,33 +3,34 @@ import { motion } from "framer-motion";
 import { IoMdCart } from "react-icons/io";
 import { CgProfile } from "react-icons/cg";
 import { FiShoppingBag } from "react-icons/fi";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../utils/Auth";
 import api from "../api/axios";
 import Crousel from "../navbar/Crousel";
 
 export default function Home() {
-  const { user, users, logout, switchRole } = useAuth();
+  const { auth, loginRole, logoutRole } = useAuth();
+
+  const user = auth.user;
+  const navigate = useNavigate();
+
+  const activeSession = auth.user || auth.vendor || auth.admin;
+  const activeUser =
+    auth.admin || auth.vendor || auth.user;
 
   const [active, setActive] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
 
-  const [count, setCartCount] = useState([]);
+  const [count, setCartCount] = useState(0);
   const [navItems, setNavItems] = useState([]);
 
   const [cartItems, setCartItems] = useState([]);
   const [wishlistItems, setWishlistItems] = useState([]);
 
-  const handleSwitchRole = (role) => {
-    switchRole(role);
-    setRoleMenuOpen(false);
-  };
-
   const fetchnavitems = async () => {
     try {
-      const response = await api.get("/api/nav");
+      const response = await api.get("/nav");
       setNavItems(response.data);
     } catch (err) {
       console.error("Failed to fetch data", err);
@@ -42,8 +43,10 @@ export default function Home() {
       return;
     }
 
-    const res = await api.get("/api/cart/count", {
-      params: { role: "User" },
+    const res = await api.get("/cart/count", {
+      headers: {
+        "x-role": "User",
+      },
     });
 
     setCartCount(res.data.count);
@@ -69,7 +72,7 @@ export default function Home() {
         params.nav = navId;
       }
 
-      const res = await api.get("/api/product/filter", {
+      const res = await api.get("/product/filter", {
         params,
       });
 
@@ -90,9 +93,10 @@ export default function Home() {
   const addtocart = async (productId) => {
     try {
       const cartitem = { productId };
-      await api.post("/api/cart/add", {
-        ...cartitem,
-        role: "User",
+      await api.post("/cart/add", cartitem, {
+        headers: {
+          "x-role": "User",
+        },
       }); // console.log("success", res.data);
       // alert("added to cart")
     } catch (error) {
@@ -104,9 +108,10 @@ export default function Home() {
   const wishlist = async (productId) => {
     try {
       const wishitem = { productId };
-      const res = await api.post("/api/wishlist/add", {
-        ...wishitem,
-        role: "User",
+      const res = await api.post("/wishlist/add", wishitem, {
+        headers: {
+          "x-role": "User",
+        },
       });
       console.log("success", res.data);
       // alert("added to cart")
@@ -145,8 +150,10 @@ export default function Home() {
   //fetching
   const fetchCartItems = async () => {
     try {
-      const res = await api.get("/api/cart", {
-        params: { role: "User" },
+      const res = await api.get("/cart", {
+        headers: {
+          "x-role": "User",
+        },
       });
 
       setCartItems(res.data.items || []);
@@ -157,8 +164,10 @@ export default function Home() {
 
   const fetchWishlistItems = async () => {
     try {
-      const res = await api.get("/api/wishlist", {
-        params: { role: "User" },
+      const res = await api.get("/wishlist", {
+        headers: {
+          "x-role": "User",
+        },
       });
 
       setWishlistItems(res.data.products || []);
@@ -182,7 +191,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (user?.role === "User") {
+    if (auth.userToken && user?.role === "User") {
       fetchCartItems();
       fetchWishlistItems();
       fetchCartCount();
@@ -311,7 +320,7 @@ export default function Home() {
               {/* Right Actions */}
               <div className="flex items-center gap-3">
                 {/* Multi-Role Switcher */}
-                {Object.keys(users).length > 1 && (
+                {/* {Object.keys(users).length > 1 && (
                   <div className="relative">
                     <button
                       type="button"
@@ -343,7 +352,7 @@ export default function Home() {
                       </div>
                     )}
                   </div>
-                )}
+                )} */}
                 {/* Search */}
                 <div className="hidden md:block">
                   <input
@@ -380,15 +389,15 @@ export default function Home() {
                   {profileOpen && (
                     <div className="absolute right-0 mt-2 w-56 bg-[#2C241F] border border-[#5C4635] rounded-2xl shadow-xl ">
                       <div className="p-2">
-                        {user ? (
+                        {activeUser ? (
                           <>
                             <Link
-                              to={`/${user.role.toLowerCase()}`}
+                              to={`/${activeSession?.user?.role?.toLowerCase() || ""}`}
                               className="block px-4 py-3 rounded-xl text-[#F5E6D3] hover:bg-[#332922]"
                             >
                               My Profile
                             </Link>
-                            {user?.role === "User" && (
+                            {activeUser?.role === "User" && (
                               <>
                                 <Link
                                   to={`/cart`}
@@ -406,7 +415,7 @@ export default function Home() {
                             )}
                             <button
                               type="button"
-                              onClick={() => logout()}
+                              onClick={() => logoutRole(activeUser.role)}
                               className="w-full text-left px-4 py-3 rounded-xl text-[#A26769] hover:bg-[#332922]"
                             >
                               Logout
@@ -434,7 +443,7 @@ export default function Home() {
                   )}
                 </div>
                 {/* Cart */}
-                {user?.role === "User" && (
+                {activeUser?.role === "User" && (
                   <Link
                     to="/cart"
                     className="relative p-2 rounded-xl bg-[#8B5E3C]"
@@ -474,6 +483,7 @@ export default function Home() {
                   </button>
                   {navItems.map((link) => (
                     <button
+                      key={link._id}
                       onClick={() => {
                         setActive(link._id);
                         setCurrentPage(1);
@@ -572,7 +582,19 @@ export default function Home() {
                       key={p._id}
                       className="relative bg-[#2C241F] border border-[#5C4635] rounded-3xl overflow-hidden shadow-[0_15px_35px_rgba(0,0,0,0.35)] hover:translate-y-[-4px]  "
                     >
-                      <Link to={`/product/${p._id}`} className="block z-0">
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => navigate(`/product/${p._id}`)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+
+                            navigate(`/product/${p._id}`);
+                          }
+                        }}
+                        className="block z-0 cursor-pointer"
+                      >
                         {/* Discount Badge */}
                         {p.discountPercentage > 0 && (
                           <div className="absolute top-4 left-4 z-20">
@@ -583,7 +605,6 @@ export default function Home() {
                             </div>
                           </div>
                         )}
-
                         {/* Product Image */}
                         <div className="aspect-square overflow-hidden">
                           <img
@@ -594,7 +615,6 @@ export default function Home() {
                         </div>
                         {/* </Link> */}
                         {/* Product Info */}
-
                         <div className="p-5">
                           {/* <Link to={`/product/${p._id}`} className="block"> */}
                           {/* Category */}
@@ -661,21 +681,17 @@ export default function Home() {
                   </p>
                 )}*/}
                           {p.stock !== undefined && p.stock !== null && (
-                            <p className="text-xs text-[#C2A878]/70 mb-4">
-                              {p.stock <= 10 ? (
-                                p.stock === 0 ? (
-                                  "Out of Stock"
-                                ) : (
-                                  "Only a few are left"
-                                )
-                              ) : (
-                                <span className="text-[#2C241F]">hehehe</span>
-                              )}
+                            <p className="text-xs text-green-400 mb-4">
+                              {p.stock <= 10
+                                ? p.stock === 0
+                                  ? "Out of Stock"
+                                  : "Only a few are left"
+                                : "In Stock"}
                             </p>
                           )}
                           {/* </Link> */}
                           {/* Actions */}
-                          {user?.role === "User" && (
+                          {activeUser?.role === "User" && (
                             <div className="space-y-3">
                               <div className="flex flex-col gap-3 pt-2">
                                 {/* Cart Button */}
@@ -781,7 +797,7 @@ export default function Home() {
                             </div>
                           )}
                         </div>
-                      </Link>
+                      </div>
                     </div>
                   ))}
                 </div>

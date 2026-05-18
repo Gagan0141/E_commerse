@@ -45,13 +45,15 @@ export default function Checkout() {
 
   const fetchCart = async () => {
     try {
-      const res = await api.get("/api/cart", {
-        params: { role: "User" },
+      const res = await api.get("/cart", {
+        headers: {
+          "x-role": "User",
+        },
       });
 
       setCartItems(res.data.items || []);
     } catch (error) {
-      console.error(error);
+      // Error handled
     } finally {
       setLoading(false);
     }
@@ -69,7 +71,7 @@ export default function Checkout() {
         setUseNewAddress(false);
       }
     } catch (error) {
-      console.error("Error fetching addresses:", error);
+      // Error fetching addresses - handled
     }
   };
 

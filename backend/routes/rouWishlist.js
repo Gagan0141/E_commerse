@@ -7,11 +7,11 @@ const {
   getWishlist,
   clearWishlist,
 } = require("../controllers/conWishlist");
-const { vertoken } = require("../middleware/verifyToken");
+const { verifyAccessToken } = require("../middleware/verifyToken");
 
-router.post("/add", vertoken, authRoles("User"), addToWishlist);
-router.delete("/:productId", vertoken, authRoles("User"), removeFromWishlist);
-router.get("/", vertoken, authRoles("User"), getWishlist);
-router.delete("/clear", vertoken, authRoles("User"), clearWishlist);
+router.post("/add", verifyAccessToken, authRoles("User"), addToWishlist);
+router.delete("/:productId", verifyAccessToken, authRoles("User"), removeFromWishlist);
+router.get("/", verifyAccessToken, authRoles("User"), getWishlist);
+router.delete("/clear", verifyAccessToken, authRoles("User"), clearWishlist);
 
 module.exports = router;

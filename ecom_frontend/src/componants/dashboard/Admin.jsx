@@ -16,7 +16,9 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState("orders");
   const [loading, setloading] = useState(false);
 
-  const { user, logout } = useAuth();
+  const { auth, logoutRole } = useAuth();
+
+  const user = auth.admin;
 
   const [form, setForm] = useState({
     title: "",
@@ -34,48 +36,44 @@ export default function Admin() {
 
   const fetchCategories = async () => {
     try {
-      const res = await api.get("/api/cat");
+      const res = await api.get("/category");
       setCategories(res.data);
     } catch (error) {
-      console.error(error);
+      // Error fetching categories
     }
   };
 
   useEffect(() => {
     fetchCategories();
   }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setloading(true);
 
     try {
+      const config = {
+        headers: {
+          "x-role": "Admin",
+        },
+      };
+
       if (activeModal === "nav") {
-        const response = await api.post("/api/nav/add", {
-          ...form,
-          role: user.role,
-        });
-        console.log("Success:", response.data);
+        const response = await api.post("/nav/add", form, config);
       }
 
       if (activeModal === "cat") {
-        const response = await api.post("/api/cat/add", {
-          ...form,
-          role: user.role,
-        });
-        console.log("Success:", response.data);
+        const response = await api.post("/category/add", form, config);
       }
 
       if (activeModal === "product") {
-        const response = await api.post("/api/product/add", {
-          ...form,
-          role: user.role,
-        });
-        console.log("Success:", response.data);
+        const response = await api.post("/product/add", form, config);
       }
 
       setactiveModal(null);
     } catch (error) {
-      console.error(error);
+      // Error submitting form
     } finally {
       setloading(false);
     }
@@ -214,7 +212,7 @@ export default function Admin() {
                 </a>
 
                 <button
-                  onClick={logout}
+                  onClick={() => logoutRole("Admin")}
                   className="w-full bg-red-500 hover:bg-red-600 text-white rounded-2xl py-3 font-semibold transition"
                 >
                   Logout
@@ -270,7 +268,6 @@ export default function Admin() {
                   </div>
                 </div>
               )}
-
               {/* DASHBOARD */}
               {activeTab === "dashboard" && (
                 <div>
@@ -295,7 +292,6 @@ export default function Admin() {
                   </div>
                 </div>
               )}
-
               {/* PRODUCTS */}
               {activeTab === "products" && (
                 <div>
@@ -315,7 +311,6 @@ export default function Admin() {
                   </div>
                 </div>
               )}
-
               {/* CATEGORIES */}
               {activeTab === "categories" && (
                 <div>
@@ -335,32 +330,28 @@ export default function Admin() {
                   </div>
                 </div>
               )}
-
               {/* ORDERS */}
               {activeTab === "orders" && (
                 // <div>
                 //   <h2 className="text-xl font-semibold mb-6">Orders</h2>
 
-                    <Orders />
+                <Orders />
                 //   <div className="rounded-2xl border border-slate-200 p-6 bg-slate-50 text-slate-500">
                 //   </div>
                 // </div>
               )}
-
               {/* CUSTOMERS */}
               {activeTab === "customers" && (
                 <div className="rounded-2xl border border-slate-200 p-4 overflow-x-auto">
                   <CustomersDashboard />
                 </div>
               )}
-
               {/* VENDORS */}
               {activeTab === "vendors" && (
                 <div className="rounded-2xl border border-slate-200 p-4 overflow-x-auto">
                   <VendorsDashboard />
                 </div>
               )}
-
               {/* ANALYTICS */}
               {activeTab === "analytics" && (
                 <div>
@@ -371,7 +362,6 @@ export default function Admin() {
                   </div>
                 </div>
               )}
-
               {/* MARKETING */}
               {activeTab === "marketing" && (
                 <div>
@@ -388,8 +378,8 @@ export default function Admin() {
                   </div>
                 </div>
               )}
-
               {/* SETTINGS */}
+              ki{" "}
               {activeTab === "settings" && (
                 <div>
                   <h2 className="text-xl font-semibold mb-6">Settings</h2>
@@ -400,7 +390,7 @@ export default function Admin() {
 
                   <div className="flex mt-8 justify-start">
                     <button
-                      onClick={() => logout()}
+                      onClick={() => logoutRole("Admin")}
                       className="bg-red-500 text-white rounded-xl px-6 py-3 hover:bg-red-600 transition"
                     >
                       Log Out

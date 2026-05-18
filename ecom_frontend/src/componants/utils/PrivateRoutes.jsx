@@ -1,37 +1,46 @@
-import React, { useEffect } from "react";
+import React from "react";
+
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { useAuth } from "../utils/Auth";
+
+import { useAuth } from "./Auth";
 
 const PrivateRoutes = ({ allowedRoles = [] }) => {
-  const { user, users, loading, switchRole } = useAuth();
+  const { auth } = useAuth();
+
   const location = useLocation();
 
-  const availableAllowedRole = allowedRoles.find((role) => users[role]);
+  // Determine expected role from route
+  const getExpectedRole = () => {
+    if (location.pathname.startsWith("/admin")) return "admin";
+    if (location.pathname.startsWith("/vendor")) return "vendor";
+    if (location.pathname.startsWith("/user")) return "user";
+    return null;
+  };
 
-  useEffect(() => {
-    if (
-      allowedRoles.length > 0 &&
-      user &&
-      !allowedRoles.includes(user.role) &&
-      availableAllowedRole
-    ) {
-      switchRole(availableAllowedRole);
-    }
-  }, [allowedRoles, availableAllowedRole, switchRole, user]);
+  const expectedRole = getExpectedRole();
 
-  if (loading) {
-    return <div>Loading...</div>;
+  // If no expected role, find first authenticated user
+  const fallbackUser = auth.admin || auth.vendor || auth.user;
+
+  const activeUser = expectedRole ? auth[expectedRole] : fallbackUser;
+
+  const currentUser = activeUser || fallbackUser;
+
+  if (!currentUser) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{
+          from: location,
+        }}
+      />
+    );
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
-  }
+  const userRole = currentUser.role;
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    if (availableAllowedRole) {
-      return <div>Loading...</div>;
-    }
-
+  if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
     return <Navigate to="/" replace />;
   }
 

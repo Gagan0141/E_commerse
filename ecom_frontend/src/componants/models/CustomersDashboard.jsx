@@ -14,7 +14,9 @@ import {
 } from "react-icons/fa";
 
 export default function CustomersDashboard() {
-  const { user } = useAuth();
+  const { auth } = useAuth();
+
+  const user = auth.admin || auth.vendor;
 
   const [customers, setCustomers] = useState([]);
   const [editId, setEditId] = useState(null);
@@ -31,11 +33,15 @@ export default function CustomersDashboard() {
     try {
       setIsLoading(true);
 
-      const res = await api.get("/api/users/customers");
+      const res = await api.get("/user/customers", {
+        headers: {
+          "x-role": "Admin",
+        },
+      });
 
       setCustomers(res.data);
     } catch (err) {
-      console.log(err);
+      // Error fetching customers
     } finally {
       setIsLoading(false);
     }
@@ -46,13 +52,15 @@ export default function CustomersDashboard() {
       return;
 
     try {
-      await api.delete(`/api/users/${id}`, {
-        data: { role: user.role },
+      await api.delete(`/user/${id}`, {
+        headers: {
+          "x-role": "Admin",
+        },
       });
 
       setCustomers((prev) => prev.filter((c) => c._id !== id));
     } catch (err) {
-      console.log(err);
+      // Error deleting customer
     }
   };
 
@@ -69,7 +77,11 @@ export default function CustomersDashboard() {
 
   const handleUpdate = async (id) => {
     try {
-      const res = await api.patch(`/api/users/${id}`, editData);
+      const res = await api.patch(`/user/${id}`, editData, {
+        headers: {
+          "x-role": "Admin",
+        },
+      });
       const updatedCustomer = res.data.data || res.data;
 
       setCustomers((prev) =>
@@ -78,7 +90,7 @@ export default function CustomersDashboard() {
 
       setEditId(null);
     } catch (err) {
-      console.log(err);
+      // Error updating customer
     }
   };
 

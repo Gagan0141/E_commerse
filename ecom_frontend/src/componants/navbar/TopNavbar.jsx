@@ -9,42 +9,53 @@ import api from "../api/axios";
 // import MultiRoleMenu from "./MultiRoleMenu";
 
 export default function TopNavbar() {
-  const { user, users, logout, switchRole } = useAuth();
+  const { logoutRole, auth } = useAuth();
 
-  const [active, setActive] = useState("For You");
+  const user = auth.user;
+
+  const activeUser =
+    auth.user || auth.vendor || auth.admin;
+
+  const [active, setActive] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+  // const [roleMenuOpen, setRoleMenuOpen] = useState(false);
 
-  const [count, setCartCount] = useState([]);
+  const [count, setCartCount] = useState(0);
   const [navItems, setNavItems] = useState([]);
 
-  const handleSwitchRole = (role) => {
-    switchRole(role);
-    setRoleMenuOpen(false);
-  };
+  // const handleSwitchRole = (role) => {
+  //   switchRole(role);
+  //   setRoleMenuOpen(false);
+  // };
 
   const fetchnavitems = async () => {
     try {
-      const response = await api.get("/api/nav");
+      const response = await api.get("/nav");
       setNavItems(response.data);
     } catch (err) {
-      console.error("Failed to fetch data", err);
+      // Failed to fetch nav items
     }
   };
 
   const fetchCartCount = useCallback(async () => {
-    if (user?.role !== "User") {
+    if (activeUser?.role !== "User") {
       setCartCount(0);
       return;
     }
 
-      const res = await api.get("/api/cart/count", {
-        params: { role: "User" },
+    try {
+      const res = await api.get("/cart/count", {
+        headers: {
+          "x-role": "User",
+        },
       });
 
       setCartCount(res.data.count);
-  }, [user]);
+    } catch (error) {
+      // Error fetching cart count
+    }
+  }, [activeUser]);
 
   useEffect(() => {
     fetchnavitems();
@@ -137,7 +148,7 @@ export default function TopNavbar() {
           {/* Right Actions */}
           <div className="flex items-center gap-3">
             {/* Multi-Role Switcher */}
-            {Object.keys(users).length > 1 && (
+            {/* {Object.keys(users).length > 1 && (
               <div className="relative">
                 <button
                   type="button"
@@ -169,7 +180,7 @@ export default function TopNavbar() {
                   </div>
                 )}
               </div>
-            )}
+            )} */}
             {/* Search */}
             <div className="hidden md:block">
               <input
@@ -202,15 +213,15 @@ export default function TopNavbar() {
               {profileOpen && (
                 <div className="absolute right-0 mt-2 w-56 bg-[#2C241F] border border-[#5C4635] rounded-2xl shadow-xl ">
                   <div className="p-2">
-                    {user ? (
+                    {activeUser ? (
                       <>
                         <Link
-                          to={`/${user.role.toLowerCase()}`}
+                          to={`/${activeUser?.role?.toLowerCase() || ""}`}
                           className="block px-4 py-3 rounded-xl text-[#F5E6D3] hover:bg-[#332922]"
                         >
                           My Profile
                         </Link>
-                        {user?.role === "User" && (
+                        {activeUser?.role === "User" && (
                           <>
                             <Link
                               to={`/cart`}
@@ -228,7 +239,7 @@ export default function TopNavbar() {
                         )}
                         <button
                           type="button"
-                          onClick={() => logout()}
+                          onClick={() => logoutRole(activeUser.role)}
                           className="w-full text-left px-4 py-3 rounded-xl text-[#A26769] hover:bg-[#332922]"
                         >
                           Logout
@@ -256,7 +267,7 @@ export default function TopNavbar() {
               )}
             </div>
             {/* Cart */}
-            {user?.role === "User" && (
+            {activeUser?.role === "User" && (
               <Link to="/cart" className="relative p-2 rounded-xl bg-[#8B5E3C]">
                 <IoMdCart className="text-white text-xl" />
                 <span className="absolute -top-2 -right-2 bg-[#A26769] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">

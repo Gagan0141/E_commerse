@@ -18,12 +18,18 @@ export default function NavItemsDashboard() {
   });
   const [categories, setCategories] = useState([]);
 
-  const { user } = useAuth();
+  const { auth } = useAuth();
+
+  const user = auth.admin || auth.vendor;
 
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/api/nav");
+      const res = await api.get("/nav", {
+        headers: {
+          "x-role": "Admin",
+        },
+      });
       setNavItems(res.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch nav items");
@@ -34,7 +40,11 @@ export default function NavItemsDashboard() {
 
   const fetchCategories = async () => {
     try {
-      const res = await api.get("/api/cat");
+      const res = await api.get("/category", {
+        headers: {
+          "x-role": "Admin",
+        },
+      });
       setCategories(res.data);
     } catch (err) {
       console.error(err);
@@ -43,9 +53,9 @@ export default function NavItemsDashboard() {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/api/nav/${id}`, {
-        data: {
-          role: user.role,
+      await api.delete(`/nav/${id}`, {
+        headers: {
+          "x-role": "Admin",
         },
       });
       setNavItems((prev) => prev.filter((item) => item._id !== id));
@@ -72,11 +82,11 @@ export default function NavItemsDashboard() {
     try {
       setSaving(true);
 
-      const res = await api.patch(`/api/nav/${id}`, {
-        ...editData,
-        role: user.role,
+      const res = await api.patch(`/nav/${id}`, editData, {
+        headers: {
+          "x-role": "Admin",
+        },
       });
-
       setNavItems((prev) =>
         prev.map((item) => (item._id === id ? res.data : item)),
       );

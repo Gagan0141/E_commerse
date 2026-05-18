@@ -3,14 +3,12 @@ const express = require("express");
 const {
   register,
   login,
-  refreshToken,
+  refreshAccessToken,
   logout,
   me,
 } = require("../controllers/authController");
 
-const {
-  vertoken,
-} = require("../middleware/verifyToken");
+const { verifyAccessToken } = require("../middleware/verifyToken");
 
 const router = express.Router();
 
@@ -19,11 +17,11 @@ router.post("/signup", register);
 
 router.post("/login", login);
 
-router.post("/refresh", refreshToken);
+router.post("/refresh", refreshAccessToken);
 
 router.post("/logout", logout);
 
 // current logged in user
-router.get("/me", vertoken, me);
+router.get("/me", verifyAccessToken, me);
 
 module.exports = router;

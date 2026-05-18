@@ -1,18 +1,35 @@
 import React, { useEffect, useState } from "react";
-import api from "../api/axios";
 import { useAuth } from "../utils/Auth";
+import { useRoleAPI } from "../utils/useRoleAPI";
 
 export default function Productsdashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 10;
   const [category, setcategory] = useState([]);
 
-  const fetchitems = async () => {
+  const fetchCategories = async () => {
     try {
-      const res = await api.get("/api/cat");
-      setcategory(res.data);
+      const res = await get("/category");
+
+      setcategory(res.data || []);
     } catch (error) {
-      console.error("failed to fetch data", error);
+      console.error(error);
+    }
+  };
+
+  const { get, delete: apiDelete, patch } = useRoleAPI();
+
+  const fetchItems = async () => {
+    try {
+      setLoading(true);
+
+      const res = await get("/product");
+
+      setProducts(res.data);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to fetch products");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -29,67 +46,56 @@ export default function Productsdashboard() {
     category: "",
   });
 
-  const { user } = useAuth();
+  const { auth } = useAuth();
 
-  const fetchItems = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get("/api/product");
-      setProducts(res.data);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to fetch products");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const user = auth.admin || auth.vendor;
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/api/product/${id}`, {
-        data: {
-          role: user.role,
-        },
-      });
+      await apiDelete(`/product/${id}`);
+
       setProducts((prev) => prev.filter((p) => p._id !== id));
     } catch (err) {
-      console.error(err);
+      // Error deleting product
     }
   };
 
   const handleEdit = (product) => {
     setEditId(product._id);
+
     setEditData({
-      title: product.title,
-      price: product.price,
-      stock: product.stock,
-      category: product?.category || "",
+      title: product.title || "",
+      price: product.price || "",
+      stock: product.stock || "",
+
+      category:
+        typeof product.category === "object"
+          ? product.category?._id
+          : product.category || "",
     });
   };
 
   const handleUpdate = async (id) => {
     if (!editData.title || !editData.price || !editData.stock) {
       alert("Please fill all fields");
+
       return;
     }
 
     try {
       setSaving(true);
 
-      const res = await api.patch(`/api/product/${id}`, {
-        ...editData,
-        role: user.role,
-      });
+      const res = await patch(`/product/${id}`, editData);
 
       setProducts((prev) => prev.map((p) => (p._id === id ? res.data : p)));
 
       setEditId(null);
     } catch (err) {
-      console.error(err);
+      // Error updating product
     } finally {
       setSaving(false);
     }
   };
-
   // Filter first
   const filteredProducts = products.filter(
     (p) =>
@@ -99,7 +105,7 @@ export default function Productsdashboard() {
 
   useEffect(() => {
     fetchItems();
-    fetchitems();
+    fetchCategories();
   }, []);
   // Pagination after filtering
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);

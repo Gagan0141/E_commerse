@@ -13,9 +13,11 @@ export default function Cart() {
     try {
       setLoading(true);
       setError("");
-      const res = await api.get("/api/cart", {
-        params: { role: "User" },
-      }); 
+      const res = await api.get("/cart", {
+        headers: {
+          "x-role": "User",
+        },
+      });
       setCartItems(res.data.items || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch cart items");
@@ -38,7 +40,7 @@ export default function Cart() {
 
     try {
       setError("");
-      await api.put(`/api/cart/quantity/${itemId}`, {
+      await api.put(`/cart/quantity/${itemId}`, {
         quantity: newQuantity,
         role: "User",
       });
@@ -58,8 +60,10 @@ export default function Cart() {
 
     try {
       setError("");
-      await api.delete(`/api/cart/${itemId}`, {
-        data: { role: "User" },
+      await api.delete(`/cart/${itemId}`, {
+        headers: {
+          "x-role": "User",
+        },
       });
 
       await fetchCartItems();
@@ -87,7 +91,7 @@ export default function Cart() {
     calculateTotal();
   }, [cartItems]);
 
-  // Initial fetch
+
   useEffect(() => {
     fetchCartItems();
   }, [fetchCartItems]);

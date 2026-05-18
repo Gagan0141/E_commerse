@@ -24,10 +24,10 @@ export default function Address() {
   const fetchAddresses = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/api/address");
+      const res = await api.get("/address");
       setAddresses(res.data || []);
     } catch (error) {
-      console.error("Error fetching addresses:", error);
+      // Error fetching addresses
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,7 @@ export default function Address() {
         alert("Address updated successfully");
       } else {
         // Create new address
-        await api.post("/api/address", formData);
+        await api.post("/address", formData);
         alert("Address added successfully");
       }
 
@@ -74,7 +74,6 @@ export default function Address() {
       setShowForm(false);
       await fetchAddresses();
     } catch (error) {
-      console.error("Error saving address:", error);
       alert(error?.response?.data?.message || "Failed to save address");
     } finally {
       setSaving(false);
@@ -95,7 +94,6 @@ export default function Address() {
         alert("Address deleted successfully");
         await fetchAddresses();
       } catch (error) {
-        console.error("Error deleting address:", error);
         alert(error?.response?.data?.message || "Failed to delete address");
       } finally {
         setSaving(false);
@@ -109,7 +107,6 @@ export default function Address() {
       await api.patch(`/address/default/${id}`);
       await fetchAddresses();
     } catch (error) {
-      console.error("Error setting default address:", error);
       alert(error?.response?.data?.message || "Failed to set default address");
     } finally {
       setSaving(false);

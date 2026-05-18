@@ -1,6 +1,6 @@
 const userModel = require("../models/modUser");
 const bcrypt = require("bcrypt");
-const { generateAccessToken } = require("../utils/generateTokens");
+const { genrateAccessToken } = require("../utils/generateTokens");
 
 // helper
 const getModelByRole = (role) => {

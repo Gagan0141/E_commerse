@@ -7,7 +7,11 @@ import { useAuth } from "./utils/Auth";
 
 export default function ProductDetails() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { auth } = useAuth();
+
+const user =
+  auth.admin ||
+  auth.vendor;
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -17,10 +21,10 @@ export default function ProductDetails() {
 
   const fetchProduct = useCallback(async () => {
     try {
-      const res = await api.get(`/api/product/${id}`);
+      const res = await api.get(`/product/${id}`);
       setProduct(res.data);
     } catch (err) {
-      console.error(err);
+      // Error fetching product
       setError(err.response?.data?.message || "Failed to load product");
     }
   }, [id]);
@@ -46,7 +50,7 @@ export default function ProductDetails() {
     try {
       setSaving("cart");
       setError("");
-      await api.post("/api/cart/add", {
+      await api.post("/cart/add", {
         productId: product._id,
         role: "User",
       });
@@ -63,7 +67,7 @@ export default function ProductDetails() {
     try {
       setSaving("wishlist");
       setError("");
-      await api.post("/api/wishlist/add", {
+      await api.post("/wishlist/add", {
         productId: product._id,
         role: "User",
       });

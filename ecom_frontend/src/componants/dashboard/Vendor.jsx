@@ -6,7 +6,10 @@ import Productsdashboard from "../models/ProductsDashboard";
 
 export default function Vendor() {
   const [activeModal, setactiveModal] = useState(null);
-  const { user, logout } = useAuth();
+  const { auth, logoutRole } = useAuth();
+
+  const user = auth.vendor;
+
   //nav item add Modal
   const [activeTab, setActiveTab] = useState("products");
   const [loading, setloading] = useState(false);
@@ -29,15 +32,15 @@ export default function Vendor() {
     setloading(true);
     try {
       if (activeModal === "product") {
-        const res = await api.post("/api/product/add", {
-          ...form,
-          role: user.role,
+        const res = await api.post("/product/add", form, {
+          headers: {
+            "x-role": "Vendor",
+          },
         });
-        console.log("Success:", res.data);
         setactiveModal(null);
       }
     } catch (err) {
-      console.error(err.response?.data || err.message);
+      // Error adding product
     } finally {
       setloading(false);
     }
@@ -140,7 +143,7 @@ export default function Vendor() {
           {/* last btns */}
           <div className="flex justify-around">
             <button
-              onClick={logout}
+              onClick={() => logoutRole("Vendor")}
               className="w-1/3 bg-gray-600 text-white rounded-xl shadow-sm px-4 py-2 hover:bg-red-500"
             >
               <b>Log Out</b>

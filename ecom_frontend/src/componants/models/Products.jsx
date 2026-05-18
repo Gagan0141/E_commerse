@@ -9,7 +9,9 @@ export default function Products() {
   const [products, setProducts] = useState([]);
   const [loading, setloading] = useState(false);
   const [error, setError] = useState("");
-  const { user } = useAuth();
+  const { auth } = useAuth();
+
+  const user = auth.admin || auth.vendor;
   const [wishlistItems, setWishlistItems] = useState([]);
 
   // const [cart, setcart] = useState("");
@@ -28,9 +30,10 @@ export default function Products() {
   const addtocart = async (productId) => {
     try {
       const cartitem = { productId };
-      await api.post("/cart/add", {
-        ...cartitem,
-        role: "User",
+      await api.post("/cart/add", cartitem, {
+        headers: {
+          "x-role": "User",
+        },
       }); // console.log("success", res.data);
       // alert("added to cart")
     } catch (error) {
@@ -42,9 +45,10 @@ export default function Products() {
     try {
       const wishitem = { productId };
 
-      const res = await api.post("/wishlist/add", {
-        ...wishitem,
-        role: "User",
+      const res = await api.post("/wishlist/add", wishitem, {
+        headers: {
+          "x-role": "User",
+        },
       });
 
       console.log("success", res.data);
@@ -60,9 +64,9 @@ export default function Products() {
     try {
       setloading(true);
 
-      const res = await api.get("/api/wishlist", {
-        params: {
-          role: "User",
+      const res = api.get("/wishlist", {
+        headers: {
+          "x-role": "User",
         },
       });
 
@@ -79,8 +83,10 @@ export default function Products() {
   // Remove item from wishlist
   const removeFromWishlist = async (productId) => {
     try {
-      const res = await api.delete(`/wishlist/${productId}`, {
-        data: { role: "User" },
+      const res = await api.delete(`/wishlist/${productId}", {
+        headers: {
+          "x-role": "User",
+        },
       });
 
       setWishlistItems(res.data.products);
@@ -240,7 +246,7 @@ export default function Products() {
                   )}
                   {/* </Link> */}
                   {/* Actions */}
-                  {user?.role === "User" && (
+                  {activeUser?.role === "User" && (
                     <div className="space-y-3">
                       <button
                         type="button"

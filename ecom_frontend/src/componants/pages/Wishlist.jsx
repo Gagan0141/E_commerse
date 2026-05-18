@@ -1,22 +1,19 @@
 import React, { useEffect, useState } from "react";
-import api from "../api/axios";
 import { Link } from "react-router-dom";
+import { useRoleAPI } from "../utils/useRoleAPI";
 
 export default function Wishlist() {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setloading] = useState(false);
   const [Error, setError] = useState("");
   const [cartItems, setCartItems] = useState([]);
+  const { get, post, delete: apiDelete } = useRoleAPI();
 
   // Fetch wishlist items
   const fetchWishlist = async () => {
     try {
       setloading(true);
-      const res = await api.get("/api/wishlist", {
-        params: {
-          role: "User",
-        },
-      });
+      const res = await get("/wishlist");
       setWishlistItems(res.data.products || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch wishlist");
@@ -28,33 +25,29 @@ export default function Wishlist() {
   // Fetch cart items for checking availability
   const fetchCartItems = async () => {
     try {
-      const res = await api.get("/api/cart");
+      const res = await get("/cart");
       setCartItems(res.data.products || []);
     } catch (err) {
-      console.Error("Failed to fetch cart items:", err);
+      // Error fetching cart items
     }
   };
 
   // Remove item from wishlist
-const removeFromWishlist = async (productId) => {
-  try {
-    const res = await api.delete(`api/wishlist/${productId}`);
+  const removeFromWishlist = async (productId) => {
+    try {
+      const res = await apiDelete(`/wishlist/${productId}`);
 
-    setWishlistItems(res.data.products);
-  } catch (err) {
-    setError(
-      err.response?.data?.message ||
-        "Failed to remove from wishlist"
-    );
-  }
-};
+      setWishlistItems(res.data.products);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to remove from wishlist");
+    }
+  };
 
   // Add to cart from wishlist
   const addToCart = async (productId) => {
     try {
-      await api.post("/api/cart/add", {
+      await post("/cart/add", {
         productId,
-        role: "User",
       });
       // Remove from wishlist after adding to cart
       removeFromWishlist(productId);

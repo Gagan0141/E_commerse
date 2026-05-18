@@ -16,12 +16,14 @@ export default function CategoriesDashboard() {
     title: "",
   });
 
-  const { user } = useAuth();
+  const { auth } = useAuth();
+
+  const user = auth.admin || auth.vendor;
 
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/api/cat");
+      const res = await api.get("/category");
       setCategories(res.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch categories");
@@ -32,14 +34,13 @@ export default function CategoriesDashboard() {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/api/cat/${id}`, {
-        data: {
-          role: user.role,
+      await api.delete(`/category/${id}`, {
+        headers: {
+          "x-role": "Admin",
         },
       });
       setCategories((prev) => prev.filter((item) => item._id !== id));
     } catch (err) {
-      console.error(err);
       alert("Failed to delete category");
     }
   };
@@ -60,18 +61,17 @@ export default function CategoriesDashboard() {
     try {
       setSaving(true);
 
-      const res = await api.patch(`/api/cat/${id}`, {
-        ...editData,
-        role: user.role,
+      const res = await api.patch(`/category/${id}`, editData, {
+        headers: {
+          "x-role": "Admin",
+        },
       });
-
       setCategories((prev) =>
         prev.map((item) => (item._id === id ? res.data : item)),
       );
 
       setEditId(null);
     } catch (err) {
-      console.error(err);
       alert("Failed to update category");
     } finally {
       setSaving(false);

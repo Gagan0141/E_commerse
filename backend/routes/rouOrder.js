@@ -9,17 +9,17 @@ const {
   getMyOrders,
 } = require("../controllers/conOrder");
 
-const { vertoken } = require("../middleware/verifyToken");
+const { verifyAccessToken } = require("../middleware/verifyToken");
 
 const { authRoles } = require("../middleware/authRole");
 //user
-router.post("/create", vertoken, authRoles("User"), createOrder);
+router.post("/create", verifyAccessToken, authRoles("User"), createOrder);
 
-router.get("/my", vertoken, authRoles("User"), getMyOrders);
+router.get("/my", verifyAccessToken, authRoles("User"), getMyOrders);
 
 //admin
-router.get("/", vertoken, authRoles("Admin"), getAllOrders);
+router.get("/", verifyAccessToken, authRoles("Admin"), getAllOrders);
 
-router.put("/approve/:id", vertoken, authRoles("Admin"), approveOrder);
+router.put("/approve/:id", verifyAccessToken, authRoles("Admin"), approveOrder);
 
 module.exports = router;

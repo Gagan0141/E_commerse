@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const { authRoles } = require("../middleware/authRole");
-const { vertoken } = require("../middleware/verifyToken");
+const { verifyAccessToken } = require("../middleware/verifyToken");
 
 const {
   createReview,
@@ -13,18 +13,18 @@ const {
 } = require("../controllers/conReview");
 
 // Create review
-router.post("/", vertoken, authRoles("User"), createReview);
+router.post("/", verifyAccessToken, authRoles("User"), createReview);
 
 // Get reviews by product
 router.get("/product/:productId", getReviewsByProduct);
 
 // Get logged-in user reviews
-router.get("/user", vertoken, authRoles("User"), getReviewsByUser);
+router.get("/user", verifyAccessToken, authRoles("User"), getReviewsByUser);
 
 // Update review
-router.put("/:id", vertoken, authRoles("User"), updateReview);
+router.put("/:id", verifyAccessToken, authRoles("User"), updateReview);
 
 // Delete review
-router.delete("/:id", vertoken, authRoles("User"), deleteReview);
+router.delete("/:id", verifyAccessToken, authRoles("User"), deleteReview);
 
 module.exports = router;

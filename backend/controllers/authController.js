@@ -4,13 +4,9 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/modUser");
 
 const {
-  generateAccessToken,
-  generateRefreshToken,
+  genrateAccessToken,
+  genrateRefreshToken,
 } = require("../utils/generateTokens");
-
-const allowedRoles = ["User", "Vendor", "Admin"];
-
-const getRefreshCookieName = (role) => `refreshToken_${role}`;
 
 const refreshCookieOptions = {
   httpOnly: true,
@@ -33,7 +29,7 @@ const toClientUser = (user) => ({
 });
 
 const toSession = (user) => ({
-  accessToken: generateAccessToken(user),
+  accessToken: genrateAccessToken(user),
   user: toClientUser(user),
 });
 
@@ -42,10 +38,11 @@ const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    const safeRole = role === "Vendor" ? "Vendor" : "User";
+    const safeRole =
+      role === "Vendor" ? "Vendor" : role === "Admin" ? "Admin" : "User";
 
     const existingUser = await User.findOne({
-      email: email.toLowerCase(),
+      email: email.toLowerCase().trim(),
     });
 
     if (existingUser) {
@@ -79,15 +76,8 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // if (!allowedRoles.includes(role)) {
-    //   return res.status(400).json({
-    //     message: "Invalid role",
-    //   });
-    // }
-
     const user = await User.findOne({
-      email: email.toLowerCase(),
-      role,
+      email: email.toLowerCase().trim(),
     });
 
     if (!user) {
@@ -104,14 +94,18 @@ const login = async (req, res) => {
       });
     }
 
-    const refreshToken = generateRefreshToken(user);
+    const refreshToken = genrateRefreshToken(user);
 
-    // const role = user.role;
-    user.refreshTokens[role] = refreshToken;
+    // role-specific refresh token
+    user.refreshTokens = {
+      ...user.refreshTokens,
+      [user.role]: refreshToken,
+    };
 
     await user.save();
 
-    res.cookie(getRefreshCookieName(role), refreshToken, refreshCookieOptions);
+    // role-specific cookie
+    res.cookie(`refreshToken_${user.role}`, refreshToken, refreshCookieOptions);
 
     res.json(toSession(user));
   } catch (error) {
@@ -121,89 +115,49 @@ const login = async (req, res) => {
   }
 };
 
-// REFRESH TOKEN
-const refreshToken = async (req, res) => {
+// REFRESH
+const refreshAccessToken = async (req, res) => {
   try {
-    const { role } = req.body || {};
+    const { role } = req.body;
 
-    const refreshRole = async (currentRole) => {
-      try {
-        const token = req.cookies[getRefreshCookieName(currentRole)];
-
-        if (!token) return null;
-
-        const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
-
-        if (decoded.role !== currentRole) {
-          return null;
-        }
-
-        const user = await User.findOne({
-          _id: decoded.id,
-          role: currentRole,
-        });
-
-        if (!user || user.refreshTokens?.[currentRole] !== token) {
-          return null;
-        }
-
-        const newRefreshToken = generateRefreshToken(user);
-
-        user.refreshTokens[currentRole] = newRefreshToken;
-
-        await user.save();
-
-        res.cookie(
-          getRefreshCookieName(currentRole),
-          newRefreshToken,
-          refreshCookieOptions,
-        );
-
-        return {
-          accessToken: generateAccessToken(user),
-          user: toClientUser(user),
-        };
-      } catch {
-        return null;
-      }
-    };
-
-    if (role) {
-      if (!allowedRoles.includes(role)) {
-        return res.status(400).json({
-          message: "Invalid role",
-        });
-      }
-
-      const session = await refreshRole(role);
-
-      if (!session) {
-        return res.status(401).json({
-          message: "Invalid refresh token",
-        });
-      }
-
-      return res.json(session);
+    if (!role) {
+      return res.status(400).json({
+        message: "Role required",
+      });
     }
 
-    const sessions = [];
+    const token = req.cookies[`refreshToken_${role}`];
 
-    for (const currentRole of allowedRoles) {
-      const session = await refreshRole(currentRole);
-
-      if (session) {
-        sessions.push(session);
-      }
-    }
-
-    if (sessions.length === 0) {
+    if (!token) {
       return res.status(401).json({
         message: "No refresh token provided",
       });
     }
 
+    const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+
+    const user = await User.findById(decoded.id);
+
+    if (!user || !user.refreshTokens || user.refreshTokens[role] !== token) {
+      return res.status(401).json({
+        message: "Invalid refresh token",
+      });
+    }
+
+    const newRefreshToken = generateRefreshToken(user);
+
+    user.refreshTokens = {
+      ...user.refreshTokens,
+      [role]: newRefreshToken,
+    };
+
+    await user.save();
+
+    res.cookie(`refreshToken_${role}`, newRefreshToken, refreshCookieOptions);
+
     res.json({
-      sessions,
+      accessToken: genrateAccessToken(user),
+      user: toClientUser(user),
     });
   } catch {
     res.status(401).json({
@@ -215,48 +169,32 @@ const refreshToken = async (req, res) => {
 // LOGOUT
 const logout = async (req, res) => {
   try {
-    const { role } = req.body || {};
+    const { role } = req.body;
 
-    const logoutRole = async (currentRole) => {
-      const token = req.cookies[getRefreshCookieName(currentRole)];
+    if (!role) {
+      return res.status(400).json({
+        message: "Role required",
+      });
+    }
 
-      if (!token) {
-        res.clearCookie(
-          getRefreshCookieName(currentRole),
-          clearRefreshCookieOptions,
-        );
-        return;
-      }
+    const token = req.cookies[`refreshToken_${role}`];
 
+    if (token) {
       const user = await User.findOne({
-        [`refreshTokens.${currentRole}`]: token,
+        [`refreshTokens.${role}`]: token,
       });
 
       if (user) {
-        user.refreshTokens[currentRole] = null;
+        user.refreshTokens = {
+          ...user.refreshTokens,
+          [role]: null,
+        };
 
         await user.save();
       }
-
-      res.clearCookie(
-        getRefreshCookieName(currentRole),
-        clearRefreshCookieOptions,
-      );
-    };
-
-    if (role) {
-      if (!allowedRoles.includes(role)) {
-        return res.status(400).json({
-          message: "Invalid role",
-        });
-      }
-
-      await logoutRole(role);
-    } else {
-      for (const currentRole of allowedRoles) {
-        await logoutRole(currentRole);
-      }
     }
+
+    res.clearCookie(`refreshToken_${role}`, clearRefreshCookieOptions);
 
     res.json({
       message: "Logged out",
@@ -292,7 +230,7 @@ const me = async (req, res) => {
 module.exports = {
   register,
   login,
-  refreshToken,
+  refreshAccessToken,
   logout,
   me,
 };

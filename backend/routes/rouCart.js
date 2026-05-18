@@ -9,19 +9,19 @@ const {
   clearCart,
   count,
 } = require("../controllers/conCart");
-const { vertoken } = require("../middleware/verifyToken");
+const { verifyAccessToken } = require("../middleware/verifyToken");
 
-router.post("/add", vertoken, authRoles("User"), addToCart);
-router.delete("/:itemId", vertoken, authRoles("User"), removeFromCart);
+router.post("/add", verifyAccessToken, authRoles("User"), addToCart);
+router.delete("/:itemId", verifyAccessToken, authRoles("User"), removeFromCart);
 router.put(
   "/quantity/:itemId",
-  vertoken,
+  verifyAccessToken,
   authRoles("User"),
   updateCartItemQuantity,
 );
-router.get("/", vertoken, authRoles("User"), getCart);
-router.delete("/clear", vertoken, authRoles("User"), clearCart);
+router.get("/", verifyAccessToken, authRoles("User"), getCart);
+router.delete("/clear", verifyAccessToken, authRoles("User"), clearCart);
 
-router.get("/count", vertoken, count);
+router.get("/count", verifyAccessToken, count);
 
 module.exports = router;

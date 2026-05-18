@@ -4,6 +4,7 @@ import api from "../api/axios";
 import { useAuth } from "../utils/Auth";
 import Address from "../models/Address";
 import MyOrders from "../user_tabs/MyOrders";
+import Dashboard from "../user_tabs/Dashboard";
 
 export default function User() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -19,7 +20,9 @@ export default function User() {
     email: "",
     phone: "",
   });
-  const { user, refresh } = useAuth();
+  const { auth } = useAuth();
+
+  const user = auth.user;
   const navigationItems = [
     { id: "dashboard", name: "Dashboard", icon: "📊" },
     { id: "orders", name: "My Orders", icon: "📦" },
@@ -31,22 +34,38 @@ export default function User() {
   ];
 
   useEffect(() => {
+    if (!auth.userToken || !user) {
+      return;
+    }
+
     fetchDashboardData();
-  }, [user]);
+  }, [auth.userToken, user]);
 
   const fetchDashboardData = async () => {
+    if (!auth.userToken) {
+      return;
+    }
     try {
       setLoading(true);
 
+      const config = {
+        headers: {
+          "x-role": "User",
+        },
+      };
+
       const [orderRes, reviewRes, addressRes] = await Promise.all([
-        api.get("/api/order/user"),
-        api.get("/api/review/user"),
-        api.get("/api/address"),
+        api.get("/order/my", config),
+
+        api.get("/review/user", config),
+
+        api.get("/address", config),
       ]);
 
-      // setUser(userRes.data);
       setOrders(orderRes.data || []);
+
       setReviews(reviewRes.data || []);
+
       setAddresses(addressRes.data || []);
 
       setEditData({
@@ -55,7 +74,7 @@ export default function User() {
         phone: user?.phone || "",
       });
     } catch (error) {
-      console.error(error);
+      // Error fetching user data
     } finally {
       setLoading(false);
     }
@@ -67,11 +86,16 @@ export default function User() {
     try {
       setSaving(true);
 
-      await api.patch("/api/auth/update", editData);
-      await refresh();
+      await api.patch("/api/auth/update", editData, {
+        headers: {
+          "x-role": "User",
+        },
+      });
+
       alert("Account updated successfully");
     } catch (error) {
-      console.error(error);
+      // Error updating account
+
       alert(error?.response?.data?.message || "Failed to update account");
     } finally {
       setSaving(false);
@@ -144,35 +168,7 @@ export default function User() {
         </div>
 
         <div className="w-full md:w-3/4 flex flex-col gap-6 z-10 bg-gray-100">
-          {activeTab === "dashboard" && (
-            <>
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
-                <h1 className="text-2xl font-bold">
-                  Welcome back, {user?.name}!
-                </h1>
-                <p className="mt-2 opacity-90">
-                  Here is your live account overview.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {stats.map((stat, index) => (
-                  <div
-                    key={index}
-                    className="bg-white rounded-xl p-5 shadow-sm border border-gray-100"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-gray-500 text-sm">{stat.title}</p>
-                        <p className="text-2xl font-bold mt-1">{stat.value}</p>
-                      </div>
-                      <span className="text-2xl">{stat.icon}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
+          {activeTab === "dashboard" && <Dashboard />}
           {activeTab === "orders" && <MyOrders />}
 
           {activeTab === "account" && (

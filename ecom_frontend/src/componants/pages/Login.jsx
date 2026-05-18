@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from "react";
+
 import { useLocation, useNavigate } from "react-router-dom";
-// import api from "./api/axios";
+
 import { FaEye } from "react-icons/fa";
 import { FaEyeSlash } from "react-icons/fa";
+
 import { useAuth } from "../utils/Auth";
+
 import Slider from "react-slick";
+
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
@@ -12,21 +16,34 @@ function Login() {
   const [form, setForm] = useState({
     email: "",
     password: "",
-    // role: "User",
+    role: "User",
   });
+
   const [loading, setLoading] = useState(false);
+
   const [error, setError] = useState("");
+
   const [rememberMe, setRememberMe] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
+
   const [showpassword, setshowpassword] = useState(false);
+
+  const navigate = useNavigate();
+
+  const location = useLocation();
+
   const { login } = useAuth();
 
   const from = location.state?.from?.pathname || "/";
+
   useEffect(() => {
     const rememberedEmail = localStorage.getItem("rememberedEmail");
+
     if (rememberedEmail) {
-      setForm((prev) => ({ ...prev, email: rememberedEmail }));
+      setForm((prev) => ({
+        ...prev,
+        email: rememberedEmail,
+      }));
+
       setRememberMe(true);
     }
   }, []);
@@ -34,37 +51,73 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (!form.email || !form.password) {
+    if (!form.email || !form.password || !form.role) {
       setError("All fields are required");
+
       return;
     }
+
     try {
       setLoading(true);
+
       setError("");
-      await login(form);
-      navigate(from, { replace: true });
+
+      // Send role with login credentials for role-scoped auth
+      const res = await login({
+        email: form.email,
+        password: form.password,
+        role: form.role,
+      });
+
+      const role = res.user.role;
+
       if (rememberMe) {
         localStorage.setItem("rememberedEmail", form.email);
       } else {
         localStorage.removeItem("rememberedEmail");
       }
+
+      // role-based redirect
+      if (role === "Admin") {
+        navigate("/admin", {
+          replace: true,
+        });
+      } else if (role === "Vendor") {
+        navigate("/vendor", {
+          replace: true,
+        });
+      } else if (role === "User") {
+        navigate("/user", {
+          replace: true,
+        });
+      } else {
+        navigate(from, {
+          replace: true,
+        });
+      }
     } catch (err) {
       const apiError = err.response?.data;
-      const errorMessage = apiError?.message || "Login failed. Please try again.";
+
+      const errorMessage =
+        apiError?.message || "Login failed. Please try again.";
+
       setError(errorMessage);
+
       console.error("Login error:", err);
     } finally {
       setLoading(false);
     }
   };
+
   const handleClick = () => {
     navigate("/signup");
   };
+
   const toggle = () => {
     setshowpassword(!showpassword);
   };
 
-  //crousel
+  // carousel settings
   const settings = {
     autoplay: true,
     autoplaySpeed: 4000,
@@ -85,7 +138,6 @@ function Login() {
       title: "Journeys Worth Remembering",
       subtitle:
         "Travel is not merely movement — it is the collection of moments, stories, and timeless memories.",
-      cta: "Begin the Journey",
     },
     {
       id: 2,
@@ -93,7 +145,6 @@ function Login() {
       title: "Flavors of Tradition",
       subtitle:
         "Discover spices and ingredients rooted in heritage, crafted through generations of culinary mastery.",
-      cta: "Explore the Collection",
     },
     {
       id: 3,
@@ -101,7 +152,6 @@ function Login() {
       title: "Captured Through Time",
       subtitle:
         "Preserve moments with precision, clarity, and craftsmanship that endure beyond the present.",
-      cta: "View the Craft",
     },
     {
       id: 4,
@@ -109,7 +159,6 @@ function Login() {
       title: "Spaces with Character",
       subtitle:
         "Curated interiors designed with timeless elegance, warmth, and enduring comfort.",
-      cta: "Discover Interiors",
     },
     {
       id: 5,
@@ -117,11 +166,9 @@ function Login() {
       title: "The Future, Thoughtfully Made",
       subtitle:
         "Innovation shaped with intention — where technology meets purpose and human experience.",
-      cta: "Step Forward",
     },
   ];
 
-  // const image_url = "https://www.itl.cat/pngfile/big/0-42_wallpaper.jpg";
   return (
     <div className="relative min-h-screen flex lg:flex-row overflow-hidden bg-[#1C1917]">
       {/* Slider */}
@@ -131,11 +178,12 @@ function Login() {
             <div key={slide.id} className="relative h-screen">
               <div
                 className="absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url(${slide.image})` }}
+                style={{
+                  backgroundImage: `url(${slide.image})`,
+                }}
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-[#1C1917]/95 via-[#2C241F]/70 to-black/30" />
 
-                {/* Desktop content */}
                 <div className="hidden lg:flex relative z-10 h-full items-end px-14 pb-16">
                   <div className="border-l-4 border-[#C2A878] pl-6 max-w-xl">
                     <p className="text-[#F5E6D3] text-4xl font-serif italic leading-relaxed">
@@ -181,7 +229,12 @@ function Login() {
 
               <input
                 value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    email: e.target.value,
+                  })
+                }
                 name="email"
                 type="email"
                 autoComplete="email"
@@ -190,7 +243,7 @@ function Login() {
             </div>
 
             {/* Password */}
-            <div className="mb-6">
+            <div className="mb-5">
               <label className="block mb-2 text-[#C2A878] text-sm">
                 Password
               </label>
@@ -199,7 +252,10 @@ function Login() {
                 <input
                   value={form.password}
                   onChange={(e) =>
-                    setForm({ ...form, password: e.target.value })
+                    setForm({
+                      ...form,
+                      password: e.target.value,
+                    })
                   }
                   name="password"
                   autoComplete="current-password"
@@ -217,11 +273,12 @@ function Login() {
               </div>
             </div>
 
-            {/* Role Selection */}
-            {/* <div className="mb-6">
+            {/* ROLE */}
+            <div className="mb-6">
               <label className="block mb-2 text-[#C2A878] text-sm">
                 Login As
               </label>
+
               <select
                 value={form.role}
                 onChange={(e) =>
@@ -233,10 +290,12 @@ function Login() {
                 className="w-full px-4 py-3 rounded-xl bg-[#1C1917] border border-[#5C4635] text-[#F5E6D3] outline-none focus:border-[#C2A878]"
               >
                 <option value="User">User</option>
+
                 <option value="Vendor">Vendor</option>
+
                 <option value="Admin">Admin</option>
               </select>
-            </div> */}
+            </div>
 
             {/* Remember */}
             <div className="mb-8 flex justify-between items-center">

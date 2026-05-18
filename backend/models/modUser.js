@@ -50,17 +50,15 @@ const userSchema = new mongoose.Schema(
     },
 
     refreshTokens: {
-      User: {
+      Admin: {
         type: String,
         default: null,
       },
-
       Vendor: {
         type: String,
         default: null,
       },
-
-      Admin: {
+      User: {
         type: String,
         default: null,
       },

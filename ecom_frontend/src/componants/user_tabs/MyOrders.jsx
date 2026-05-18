@@ -11,14 +11,15 @@ export default function MyOrders() {
     try {
       setLoading(true);
 
-      const res = await api.get("/api/orders/my");
+      const res = await api.get("/order/my", {
+        headers: {
+          "x-role": "User",
+        },
+      });
 
       setOrders(res.data || []);
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Failed to fetch orders",
-      );
+      setError(err.response?.data?.message || "Failed to fetch orders");
     } finally {
       setLoading(false);
     }
@@ -49,13 +50,9 @@ export default function MyOrders() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-gray-800">
-            My Orders
-          </h2>
+          <h2 className="text-3xl font-bold text-gray-800">My Orders</h2>
 
-          <p className="text-gray-500 mt-1">
-            Track and manage your orders
-          </p>
+          <p className="text-gray-500 mt-1">Track and manage your orders</p>
         </div>
 
         <Link
@@ -82,9 +79,7 @@ export default function MyOrders() {
       <div>
         {loading ? (
           <div className="bg-white rounded-2xl shadow-sm p-10 text-center border border-gray-100">
-            <p className="text-gray-500">
-              Loading orders...
-            </p>
+            <p className="text-gray-500">Loading orders...</p>
           </div>
         ) : orders.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm p-10 text-center border border-gray-100">
@@ -92,9 +87,7 @@ export default function MyOrders() {
               No Orders Yet
             </h3>
 
-            <p className="text-gray-500 mb-6">
-              Your orders will appear here
-            </p>
+            <p className="text-gray-500 mb-6">Your orders will appear here</p>
 
             <Link
               to="/"
@@ -124,9 +117,7 @@ export default function MyOrders() {
                 {/* Top */}
                 <div className="p-5 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">
-                      Order ID
-                    </p>
+                    <p className="text-sm text-gray-500 mb-1">Order ID</p>
 
                     <h3 className="font-mono text-sm text-gray-700 break-all">
                       {order._id}
@@ -144,15 +135,10 @@ export default function MyOrders() {
                     </span>
 
                     <div className="text-right">
-                      <p className="text-sm text-gray-500">
-                        Total
-                      </p>
+                      <p className="text-sm text-gray-500">Total</p>
 
                       <h3 className="text-lg font-bold text-gray-800">
-                        ₹{" "}
-                        {order.totalPrice?.toFixed(
-                          2,
-                        )}
+                        ₹ {order.totalPrice?.toFixed(2)}
                       </h3>
                     </div>
                   </div>
@@ -180,12 +166,8 @@ export default function MyOrders() {
                       >
                         <div className="flex items-center gap-4">
                           <img
-                            src={
-                              item.product?.image
-                            }
-                            alt={
-                              item.product?.title
-                            }
+                            src={item.product?.image}
+                            alt={item.product?.title}
                             className="
                               w-20 h-20
                               rounded-xl
@@ -196,38 +178,24 @@ export default function MyOrders() {
 
                           <div>
                             <h5 className="font-semibold text-gray-800">
-                              {
-                                item.product
-                                  ?.title
-                              }
+                              {item.product?.title}
                             </h5>
 
                             <p className="text-sm text-gray-500 mt-1">
-                              Quantity:{" "}
-                              {item.quantity}
+                              Quantity: {item.quantity}
                             </p>
 
                             <p className="text-sm text-gray-500">
-                              ₹{" "}
-                              {item.price.toFixed(
-                                2,
-                              )}{" "}
-                              each
+                              ₹ {item.price.toFixed(2)} each
                             </p>
                           </div>
                         </div>
 
                         <div className="text-right">
-                          <p className="text-sm text-gray-500">
-                            Subtotal
-                          </p>
+                          <p className="text-sm text-gray-500">Subtotal</p>
 
                           <h4 className="font-bold text-gray-800">
-                            ₹{" "}
-                            {(
-                              item.price *
-                              item.quantity
-                            ).toFixed(2)}
+                            ₹ {(item.price * item.quantity).toFixed(2)}
                           </h4>
                         </div>
                       </div>
@@ -242,48 +210,20 @@ export default function MyOrders() {
                   </h4>
 
                   <div className="text-sm text-gray-600 space-y-1">
-                    <p>
-                      {
-                        order.shippingAddress
-                          ?.fullName
-                      }
-                    </p>
+                    <p>{order.shippingAddress?.fullName}</p>
+
+                    <p>{order.shippingAddress?.phone}</p>
 
                     <p>
-                      {
-                        order.shippingAddress
-                          ?.phone
-                      }
-                    </p>
-
-                    <p>
-                      {
-                        order.shippingAddress
-                          ?.address
-                      }
-                      ,{" "}
-                      {
-                        order.shippingAddress
-                          ?.city
-                      }
-                      ,{" "}
-                      {
-                        order.shippingAddress
-                          ?.state
-                      }{" "}
-                      -{" "}
-                      {
-                        order.shippingAddress
-                          ?.pincode
-                      }
+                      {order.shippingAddress?.address},{" "}
+                      {order.shippingAddress?.city},{" "}
+                      {order.shippingAddress?.state} -{" "}
+                      {order.shippingAddress?.pincode}
                     </p>
                   </div>
 
                   <div className="mt-4 text-xs text-gray-400">
-                    Ordered on{" "}
-                    {new Date(
-                      order.createdAt,
-                    ).toLocaleString()}
+                    Ordered on {new Date(order.createdAt).toLocaleString()}
                   </div>
                 </div>
               </div>
