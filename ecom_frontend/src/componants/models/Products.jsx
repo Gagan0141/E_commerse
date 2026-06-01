@@ -18,7 +18,7 @@ export default function Products() {
   const fetchitems = async () => {
     try {
       setloading(true);
-      const res = await api.get("/product");
+      const res = await api.get("/api/product");
       setProducts(res.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch Products");
@@ -30,7 +30,7 @@ export default function Products() {
   const addtocart = async (productId) => {
     try {
       const cartitem = { productId };
-      await api.post("/cart/add", cartitem, {
+      await api.post("/api/cart/add", cartitem, {
         headers: {
           "x-role": "User",
         },
@@ -45,7 +45,7 @@ export default function Products() {
     try {
       const wishitem = { productId };
 
-      const res = await api.post("/wishlist/add", wishitem, {
+      const res = await api.post("/api/wishlist/add", wishitem, {
         headers: {
           "x-role": "User",
         },
@@ -64,7 +64,7 @@ export default function Products() {
     try {
       setloading(true);
 
-      const res = api.get("/wishlist", {
+      const res = api.get("/api/wishlist", {
         headers: {
           "x-role": "User",
         },
@@ -83,7 +83,7 @@ export default function Products() {
   // Remove item from wishlist
   const removeFromWishlist = async (productId) => {
     try {
-      const res = await api.delete(`/wishlist/${productId}", {
+      const res = await api.delete(`/api/wishlist/${productId}`, {
         headers: {
           "x-role": "User",
         },

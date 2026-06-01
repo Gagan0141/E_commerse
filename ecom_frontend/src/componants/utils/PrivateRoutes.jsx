@@ -5,9 +5,14 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "./Auth";
 
 const PrivateRoutes = ({ allowedRoles = [] }) => {
-  const { auth } = useAuth();
+  const { auth, isInitialized } = useAuth();
 
   const location = useLocation();
+
+  // Wait for auth to initialize
+  if (!isInitialized) {
+    return null;
+  }
 
   // Determine expected role from route
   const getExpectedRole = () => {
@@ -19,14 +24,12 @@ const PrivateRoutes = ({ allowedRoles = [] }) => {
 
   const expectedRole = getExpectedRole();
 
-  // If no expected role, find first authenticated user
-  const fallbackUser = auth.admin || auth.vendor || auth.user;
+  // Get the user for the expected role, or fallback to first authenticated user
+  const activeUser = expectedRole 
+    ? auth[expectedRole] 
+    : (auth.admin || auth.vendor || auth.user);
 
-  const activeUser = expectedRole ? auth[expectedRole] : fallbackUser;
-
-  const currentUser = activeUser || fallbackUser;
-
-  if (!currentUser) {
+  if (!activeUser || !activeUser.id) {
     return (
       <Navigate
         to="/login"
@@ -38,12 +41,13 @@ const PrivateRoutes = ({ allowedRoles = [] }) => {
     );
   }
 
-  const userRole = currentUser.role;
+  // Normalize role comparison to uppercase
+  const userRole = activeUser.role?.toUpperCase() || "";
+  const normalizedAllowedRoles = allowedRoles.map(r => typeof r === 'string' ? r.toUpperCase() : r);
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
+  if (normalizedAllowedRoles.length > 0 && !normalizedAllowedRoles.includes(userRole.toUpperCase())) {
     return <Navigate to="/" replace />;
   }
-
   return <Outlet />;
 };
 

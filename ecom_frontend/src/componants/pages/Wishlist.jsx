@@ -13,7 +13,7 @@ export default function Wishlist() {
   const fetchWishlist = async () => {
     try {
       setloading(true);
-      const res = await get("/wishlist");
+      const res = await get("/api/wishlist");
       setWishlistItems(res.data.products || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch wishlist");
@@ -25,7 +25,7 @@ export default function Wishlist() {
   // Fetch cart items for checking availability
   const fetchCartItems = async () => {
     try {
-      const res = await get("/cart");
+      const res = await get("/api/cart");
       setCartItems(res.data.products || []);
     } catch (err) {
       // Error fetching cart items
@@ -35,7 +35,7 @@ export default function Wishlist() {
   // Remove item from wishlist
   const removeFromWishlist = async (productId) => {
     try {
-      const res = await apiDelete(`/wishlist/${productId}`);
+      const res = await apiDelete(`/api/wishlist/${productId}`);
 
       setWishlistItems(res.data.products);
     } catch (err) {
@@ -46,7 +46,7 @@ export default function Wishlist() {
   // Add to cart from wishlist
   const addToCart = async (productId) => {
     try {
-      await post("/cart/add", {
+      await post("/api/cart/add", {
         productId,
       });
       // Remove from wishlist after adding to cart

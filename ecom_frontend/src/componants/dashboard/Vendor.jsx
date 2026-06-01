@@ -32,7 +32,7 @@ export default function Vendor() {
     setloading(true);
     try {
       if (activeModal === "product") {
-        const res = await api.post("/product/add", form, {
+        const res = await api.post("/api/product/add", form, {
           headers: {
             "x-role": "Vendor",
           },

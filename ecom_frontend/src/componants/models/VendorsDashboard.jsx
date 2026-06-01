@@ -35,7 +35,7 @@ export default function VendorsDashboard() {
     try {
       setIsLoading(true);
 
-      const res = await api.get("/user/vendors", {
+      const res = await api.get("/api/user/vendors", {
         headers: {
           "x-role": "Admin",
         },
@@ -53,7 +53,7 @@ export default function VendorsDashboard() {
     if (!window.confirm("Are you sure you want to delete this vendor?")) return;
 
     try {
-      await api.delete(`/user/${id}`, {
+      await api.delete(`/api/user/${id}`, {
         headers: {
           "x-role": "Admin",
         },
@@ -78,7 +78,7 @@ export default function VendorsDashboard() {
 
   const handleUpdate = async (id) => {
     try {
-      const res = await api.patch(`/user/${id}`, editData, {
+      const res = await api.patch(`/api/user/${id}`, editData, {
         headers: {
           "x-role": "Admin",
         },

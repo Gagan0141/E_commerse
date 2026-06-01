@@ -36,7 +36,7 @@ export default function Admin() {
 
   const fetchCategories = async () => {
     try {
-      const res = await api.get("/category");
+      const res = await api.get("/api/cat");
       setCategories(res.data);
     } catch (error) {
       // Error fetching categories
@@ -60,15 +60,15 @@ export default function Admin() {
       };
 
       if (activeModal === "nav") {
-        const response = await api.post("/nav/add", form, config);
+        const response = await api.post("/api/nav/add", form, config);
       }
 
       if (activeModal === "cat") {
-        const response = await api.post("/category/add", form, config);
+        const response = await api.post("/api/cat/add", form, config);
       }
 
       if (activeModal === "product") {
-        const response = await api.post("/product/add", form, config);
+        const response = await api.post("/api/product/add", form, config);
       }
 
       setactiveModal(null);
@@ -379,7 +379,6 @@ export default function Admin() {
                 </div>
               )}
               {/* SETTINGS */}
-              ki{" "}
               {activeTab === "settings" && (
                 <div>
                   <h2 className="text-xl font-semibold mb-6">Settings</h2>

@@ -55,11 +55,11 @@ export default function User() {
       };
 
       const [orderRes, reviewRes, addressRes] = await Promise.all([
-        api.get("/order/my", config),
+        api.get("/api/order/my", config),
 
-        api.get("/review/user", config),
+        api.get("/api/review/user", config),
 
-        api.get("/address", config),
+        api.get("/api/address", config),
       ]);
 
       setOrders(orderRes.data || []);

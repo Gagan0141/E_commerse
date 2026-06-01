@@ -23,7 +23,7 @@ export default function CategoriesDashboard() {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/category");
+      const res = await api.get("/api/cat");
       setCategories(res.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch categories");
@@ -34,7 +34,7 @@ export default function CategoriesDashboard() {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/category/${id}`, {
+      await api.delete(`/api/cat/${id}`, {
         headers: {
           "x-role": "Admin",
         },
@@ -61,7 +61,7 @@ export default function CategoriesDashboard() {
     try {
       setSaving(true);
 
-      const res = await api.patch(`/category/${id}`, editData, {
+      const res = await api.patch(`/api/category/${id}`, editData, {
         headers: {
           "x-role": "Admin",
         },

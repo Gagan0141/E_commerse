@@ -45,7 +45,7 @@ export default function Checkout() {
 
   const fetchCart = async () => {
     try {
-      const res = await api.get("/cart", {
+      const res = await api.get("/api/cart", {
         headers: {
           "x-role": "User",
         },

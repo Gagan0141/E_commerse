@@ -3,13 +3,30 @@ import { useAuth } from "../utils/Auth";
 import { useRoleAPI } from "../utils/useRoleAPI";
 
 export default function Productsdashboard() {
+  // All state declarations at the top
   const [currentPage, setCurrentPage] = useState(1);
-  const productsPerPage = 10;
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [category, setcategory] = useState([]);
+  const [editId, setEditId] = useState(null);
+  const [editData, setEditData] = useState({
+    title: "",
+    price: "",
+    stock: "",
+    category: "",
+  });
+
+  const productsPerPage = 10;
+
+  // All hooks at the top
+  const { auth } = useAuth();
+  const { get, delete: apiDelete, patch } = useRoleAPI();
 
   const fetchCategories = async () => {
     try {
-      const res = await get("/category");
+      const res = await get("/api/category");
 
       setcategory(res.data || []);
     } catch (error) {
@@ -17,13 +34,11 @@ export default function Productsdashboard() {
     }
   };
 
-  const { get, delete: apiDelete, patch } = useRoleAPI();
-
   const fetchItems = async () => {
     try {
       setLoading(true);
 
-      const res = await get("/product");
+      const res = await get("/api/product");
 
       setProducts(res.data);
     } catch (err) {
@@ -33,26 +48,11 @@ export default function Productsdashboard() {
     }
   };
 
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  const [editId, setEditId] = useState(null);
-  const [editData, setEditData] = useState({
-    title: "",
-    price: "",
-    stock: "",
-    category: "",
-  });
-
-  const { auth } = useAuth();
-
   const user = auth.admin || auth.vendor;
 
   const handleDelete = async (id) => {
     try {
-      await apiDelete(`/product/${id}`);
+      await apiDelete(`/api/product/${id}`);
 
       setProducts((prev) => prev.filter((p) => p._id !== id));
     } catch (err) {
@@ -85,7 +85,7 @@ export default function Productsdashboard() {
     try {
       setSaving(true);
 
-      const res = await patch(`/product/${id}`, editData);
+      const res = await patch(`/api/product/${id}`, editData);
 
       setProducts((prev) => prev.map((p) => (p._id === id ? res.data : p)));
 

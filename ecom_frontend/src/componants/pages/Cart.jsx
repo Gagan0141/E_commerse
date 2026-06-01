@@ -13,7 +13,7 @@ export default function Cart() {
     try {
       setLoading(true);
       setError("");
-      const res = await api.get("/cart", {
+      const res = await api.get("/api/cart", {
         headers: {
           "x-role": "User",
         },
@@ -40,7 +40,7 @@ export default function Cart() {
 
     try {
       setError("");
-      await api.put(`/cart/quantity/${itemId}`, {
+      await api.put(`/api/cart/quantity/${itemId}`, {
         quantity: newQuantity,
         role: "User",
       });
@@ -60,7 +60,7 @@ export default function Cart() {
 
     try {
       setError("");
-      await api.delete(`/cart/${itemId}`, {
+      await api.delete(`/api/cart/${itemId}`, {
         headers: {
           "x-role": "User",
         },

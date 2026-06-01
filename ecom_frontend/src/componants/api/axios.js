@@ -74,7 +74,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/api/",
+  baseURL: "http://localhost:5000",
   withCredentials: true,
 });
 
@@ -83,14 +83,14 @@ api.interceptors.request.use((config) => {
 
   const role = config.headers.role;
 
-  if (role === "user" && auth?.userToken) {
-    config.headers.Authorization = `Bearer${auth.userToken}`;
+  if (role === "User" && auth?.userToken) {
+    config.headers.Authorization = `Bearer ${auth.userToken}`;
   }
-  if (role === "vendor" && auth?.vendorToken) {
-    config.headers.Authorization = `Bearer${auth.vendorToken}`;
+  if (role === "Vendor" && auth?.vendorToken) {
+    config.headers.Authorization = `Bearer ${auth.vendorToken}`;
   }
-  if (role === "admin" && auth?.adminToken) {
-    config.headers.Authorization = `Bearer${auth.adminToken}`;
+  if (role === "Admin" && auth?.adminToken) {
+    config.headers.Authorization = `Bearer ${auth.adminToken}`;
   }
   return config;
 });

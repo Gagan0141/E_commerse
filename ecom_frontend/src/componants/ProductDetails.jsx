@@ -21,7 +21,7 @@ const user =
 
   const fetchProduct = useCallback(async () => {
     try {
-      const res = await api.get(`/product/${id}`);
+      const res = await api.get(`/api/product/${id}`);
       setProduct(res.data);
     } catch (err) {
       // Error fetching product
@@ -50,7 +50,7 @@ const user =
     try {
       setSaving("cart");
       setError("");
-      await api.post("/cart/add", {
+      await api.post("/api/cart/add", {
         productId: product._id,
         role: "User",
       });
@@ -67,7 +67,7 @@ const user =
     try {
       setSaving("wishlist");
       setError("");
-      await api.post("/wishlist/add", {
+      await api.post("/api/wishlist/add", {
         productId: product._id,
         role: "User",
       });

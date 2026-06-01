@@ -76,11 +76,14 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    console.log("Login attempt:", { email, password: "***" });
+
     const user = await User.findOne({
       email: email.toLowerCase().trim(),
     });
 
     if (!user) {
+      console.log("User not found:", email);
       return res.status(400).json({
         message: "Invalid credentials",
       });
@@ -89,6 +92,7 @@ const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
+      console.log("Password mismatch for:", email);
       return res.status(400).json({
         message: "Invalid credentials",
       });
@@ -96,12 +100,13 @@ const login = async (req, res) => {
 
     const refreshToken = genrateRefreshToken(user);
 
-    // role-specific refresh token
-    user.refreshTokens = {
-      ...user.refreshTokens,
-      [user.role]: refreshToken,
-    };
+    // role-specific refresh token - initialize if doesn't exist
+    if (!user.refreshTokens) {
+      user.refreshTokens = {};
+    }
+    user.refreshTokens[user.role] = refreshToken;
 
+    console.log("Saving user with refreshToken...");
     await user.save();
 
     // role-specific cookie
@@ -109,6 +114,7 @@ const login = async (req, res) => {
 
     res.json(toSession(user));
   } catch (error) {
+    console.error("Login error:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -144,7 +150,7 @@ const refreshAccessToken = async (req, res) => {
       });
     }
 
-    const newRefreshToken = generateRefreshToken(user);
+    const newRefreshToken = genrateRefreshToken(user);
 
     user.refreshTokens = {
       ...user.refreshTokens,

@@ -25,7 +25,7 @@ export default function NavItemsDashboard() {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/nav", {
+      const res = await api.get("/api/nav", {
         headers: {
           "x-role": "Admin",
         },
@@ -40,7 +40,7 @@ export default function NavItemsDashboard() {
 
   const fetchCategories = async () => {
     try {
-      const res = await api.get("/category", {
+      const res = await api.get("/api/category", {
         headers: {
           "x-role": "Admin",
         },
@@ -53,7 +53,7 @@ export default function NavItemsDashboard() {
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/nav/${id}`, {
+      await api.delete(`/api/nav/${id}`, {
         headers: {
           "x-role": "Admin",
         },
@@ -82,7 +82,7 @@ export default function NavItemsDashboard() {
     try {
       setSaving(true);
 
-      const res = await api.patch(`/nav/${id}`, editData, {
+      const res = await api.patch(`/api/nav/${id}`, editData, {
         headers: {
           "x-role": "Admin",
         },

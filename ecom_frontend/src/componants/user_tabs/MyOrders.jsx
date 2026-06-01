@@ -11,7 +11,7 @@ export default function MyOrders() {
     try {
       setLoading(true);
 
-      const res = await api.get("/order/my", {
+      const res = await api.get("/api/order/my", {
         headers: {
           "x-role": "User",
         },

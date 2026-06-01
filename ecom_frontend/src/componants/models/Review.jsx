@@ -18,7 +18,7 @@ export default function Review({ productId, user }) {
   const fetchReviews = useCallback(async () => {
     try {
       setFetching(true);
-      const res = await api.get(`/review/product/${productId}`);
+      const res = await api.get(`/api/review/product/${productId}`);
       setReviews(res.data);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch reviews");
@@ -40,7 +40,7 @@ export default function Review({ productId, user }) {
       setLoading(true);
       setError("");
 
-      await api.post("/review", {
+      await api.post("/api/review", {
         productId,
         rating,
         comment,
@@ -64,7 +64,7 @@ export default function Review({ productId, user }) {
       setLoading(true);
       setError("");
 
-      await api.put(`/review/${reviewId}`, {
+      await api.put(`/api/review/${reviewId}`, {
         rating: editRating,
         comment: editComment,
       });
@@ -92,7 +92,7 @@ export default function Review({ productId, user }) {
       setLoading(true);
       setError("");
 
-      await api.delete(`/review/${reviewId}`);
+      await api.delete(`/api/review/${reviewId}`);
 
       await fetchReviews();
     } catch (err) {

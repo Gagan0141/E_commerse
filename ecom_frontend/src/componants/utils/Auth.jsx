@@ -16,58 +16,77 @@ export default function AuthProvider({ children }) {
     adminToken: null,
   });
 
+  const [isInitialized, setIsInitialized] = useState(false);
+
   useEffect(() => {
     const initializeAuth = async () => {
       const stored = getStoredAuth();
-      if (!stored) return;
+      
+      if (!stored) {
+        setIsInitialized(true);
+        return;
+      }
+      
       let updatedAuth = { ...stored };
+      
       try {
+        // Try to refresh tokens if they exist
         if (stored.userToken) {
-          const refreshRes = await api.post("/user/refresh");
-          updatedAuth.userToken = refreshRes.data.accessToken;
-
-          const profileRes = await api.get("/user/profile", {
-            headers: {
-              role: "user",
-              Authorization: `Bearer ${refreshRes.data.accessToken}`,
-            },
-          });
-          updatedAuth.user = profileRes.data;
+          try {
+            const refreshRes = await api.post("/api/auth/refresh", { role: "User" }, {
+              headers: {
+                role: "user",
+              },
+            });
+            updatedAuth.userToken = refreshRes.data.accessToken;
+            updatedAuth.user = refreshRes.data.user;
+          } catch (err) {
+            // Token refresh failed, keep stored data
+          }
         }
+        
         if (stored.vendorToken) {
-          const refreshRes = await api.post("/vendor/refresh");
-          updatedAuth.vendorToken = refreshRes.data.accessToken;
-
-          const profileRes = await api.get("/vendor/profile", {
-            headers: {
-              role: "vendor",
-              Authorization: `Bearer ${refreshRes.data.accessToken}`,
-            },
-          });
-          updatedAuth.vendor = profileRes.data;
+          try {
+            const refreshRes = await api.post("/api/auth/refresh", { role: "Vendor" }, {
+              headers: {
+                role: "vendor",
+              },
+            });
+            updatedAuth.vendorToken = refreshRes.data.accessToken;
+            updatedAuth.vendor = refreshRes.data.user;
+          } catch (err) {
+            // Token refresh failed, keep stored data
+          }
         }
+        
         if (stored.adminToken) {
-          const refreshRes = await api.post("/admin/refresh");
-          updatedAuth.adminToken = refreshRes.data.accessToken;
-          const profileRes = await api.get("/admin/profile", {
-            headers: {
-              role: "admin",
-              Authorization: `Bearer ${refreshRes.data.accessToken}`,
-            },
-          });
-          updatedAuth.admin = profileRes.data;
+          try {
+            const refreshRes = await api.post("/api/auth/refresh", { role: "Admin" }, {
+              headers: {
+                role: "admin",
+              },
+            });
+            updatedAuth.adminToken = refreshRes.data.accessToken;
+            updatedAuth.admin = refreshRes.data.user;
+          } catch (err) {
+            // Token refresh failed, keep stored data
+          }
         }
+        
         setAuth(updatedAuth);
       } catch (error) {
-        console.log(error);
+        setAuth(stored);
+      } finally {
+        setIsInitialized(true);
       }
     };
     initializeAuth();
   }, []);
 
   useEffect(() => {
+    if (!isInitialized) return;
     setStoredAuth(auth);
-  }, [auth]);
+  }, [auth, isInitialized]);
 
   const loginRole = (role, data, token) => {
     setAuth((pre) => ({ ...pre, [role]: data, [`${role}Token`]: token }));
@@ -77,7 +96,7 @@ export default function AuthProvider({ children }) {
     const { email, password, role } = credentials;
     const roleKey = role.toLowerCase();
     
-    const res = await api.post(`/${roleKey}/login`, {
+    const res = await api.post("/api/auth/login", {
       email,
       password,
     });
@@ -87,7 +106,7 @@ export default function AuthProvider({ children }) {
   };
 
   const logoutRole = async (role) => {
-    await api.post(`/${role}/logout`);
+    await api.post("/api/auth/logout", { role });
     setAuth((pre) => {
       const updated = { ...pre, [role]: null, [`${role}Token`]: null };
       setStoredAuth(updated);
@@ -97,7 +116,7 @@ export default function AuthProvider({ children }) {
 
   const refreshRole = async (role) => {
     try {
-      const res = await api.post(`/${role}/refresh`);
+      const res = await api.post("/api/auth/refresh", { role });
       setAuth((pre) => ({ ...pre, [`${role}Token`]: res.data.accessToken }));
     } catch (error) {
       console.log(error);
@@ -106,7 +125,7 @@ export default function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ auth, setAuth, login, loginRole, logoutRole, refreshRole }}
+      value={{ auth, setAuth, login, loginRole, logoutRole, refreshRole, isInitialized }}
     >
       {children}
     </AuthContext.Provider>

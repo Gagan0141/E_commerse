@@ -30,7 +30,7 @@ export default function Home() {
 
   const fetchnavitems = async () => {
     try {
-      const response = await api.get("/nav");
+      const response = await api.get("/api/nav");
       setNavItems(response.data);
     } catch (err) {
       console.error("Failed to fetch data", err);
@@ -43,7 +43,7 @@ export default function Home() {
       return;
     }
 
-    const res = await api.get("/cart/count", {
+    const res = await api.get("/api/cart/count", {
       headers: {
         "x-role": "User",
       },
@@ -72,7 +72,7 @@ export default function Home() {
         params.nav = navId;
       }
 
-      const res = await api.get("/product/filter", {
+      const res = await api.get("/api/product/filter", {
         params,
       });
 
@@ -93,7 +93,7 @@ export default function Home() {
   const addtocart = async (productId) => {
     try {
       const cartitem = { productId };
-      await api.post("/cart/add", cartitem, {
+      await api.post("/api/cart/add", cartitem, {
         headers: {
           "x-role": "User",
         },
@@ -108,7 +108,7 @@ export default function Home() {
   const wishlist = async (productId) => {
     try {
       const wishitem = { productId };
-      const res = await api.post("/wishlist/add", wishitem, {
+      const res = await api.post("/api/wishlist/add", wishitem, {
         headers: {
           "x-role": "User",
         },
@@ -150,7 +150,7 @@ export default function Home() {
   //fetching
   const fetchCartItems = async () => {
     try {
-      const res = await api.get("/cart", {
+      const res = await api.get("/api/cart", {
         headers: {
           "x-role": "User",
         },
@@ -164,7 +164,7 @@ export default function Home() {
 
   const fetchWishlistItems = async () => {
     try {
-      const res = await api.get("/wishlist", {
+      const res = await api.get("/api/wishlist", {
         headers: {
           "x-role": "User",
         },
