@@ -1,19 +1,40 @@
 const jwt = require("jsonwebtoken");
 
-const genrateRefreshToken = (payload) => {
-  // Ensure payload is a plain object with only necessary fields
-  const tokenPayload = payload._id ? { id: payload._id, role: payload.role } : payload;
-  return jwt.sign(tokenPayload, process.env.REFRESH_TOKEN_SECRET, {
-    expiresIn: "7d",
-  });
+// Create payload for JWT
+const createPayload = (user) => ({
+  id: user._id || user.id,
+  role: user.role,
+});
+
+// ---------------------------
+// Access Token
+// ---------------------------
+
+const generateAccessToken = (user) => {
+  return jwt.sign(
+    createPayload(user),
+    process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: "15m",
+    }
+  );
 };
 
-const genrateAccessToken = (payload) => {
-  // Ensure payload is a plain object with only necessary fields
-  const tokenPayload = payload._id ? { id: payload._id, role: payload.role } : payload;
-  return jwt.sign(tokenPayload, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "15m",
-  });
+// ---------------------------
+// Refresh Token
+// ---------------------------
+
+const generateRefreshToken = (user) => {
+  return jwt.sign(
+    createPayload(user),
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: "7d",
+    }
+  );
 };
 
-module.exports = { genrateRefreshToken, genrateAccessToken };
+module.exports = {
+  generateAccessToken,
+  generateRefreshToken,
+};

@@ -13,7 +13,7 @@ export default function Orders() {
 
       const res = await api.get("/api/order/", {
         headers: {
-          "x-role": "Admin",
+          role: "admin",
         },
       });
 

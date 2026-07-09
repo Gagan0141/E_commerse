@@ -32,7 +32,7 @@ export default function Products() {
       const cartitem = { productId };
       await api.post("/api/cart/add", cartitem, {
         headers: {
-          "x-role": "User",
+          role: "user",
         },
       }); // console.log("success", res.data);
       // alert("added to cart")
@@ -47,7 +47,7 @@ export default function Products() {
 
       const res = await api.post("/api/wishlist/add", wishitem, {
         headers: {
-          "x-role": "User",
+          role: "user",
         },
       });
 
@@ -66,7 +66,7 @@ export default function Products() {
 
       const res = api.get("/api/wishlist", {
         headers: {
-          "x-role": "User",
+          role: "user",
         },
       });
 
@@ -85,7 +85,7 @@ export default function Products() {
     try {
       const res = await api.delete(`/api/wishlist/${productId}`, {
         headers: {
-          "x-role": "User",
+          role: "user",
         },
       });
 

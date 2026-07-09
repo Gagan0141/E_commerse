@@ -47,7 +47,7 @@ export default function TopNavbar() {
     try {
       const res = await api.get("/api/cart/count", {
         headers: {
-          "x-role": "User",
+          role: "user",
         },
       });
 

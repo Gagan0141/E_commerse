@@ -4,8 +4,8 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/modUser");
 
 const {
-  genrateAccessToken,
-  genrateRefreshToken,
+  generateAccessToken,
+  generateRefreshToken,
 } = require("../utils/generateTokens");
 
 const refreshCookieOptions = {
@@ -29,7 +29,7 @@ const toClientUser = (user) => ({
 });
 
 const toSession = (user) => ({
-  accessToken: genrateAccessToken(user),
+  accessToken: generateAccessToken(user),
   user: toClientUser(user),
 });
 
@@ -98,7 +98,7 @@ const login = async (req, res) => {
       });
     }
 
-    const refreshToken = genrateRefreshToken(user);
+    const refreshToken = generateRefreshToken(user);
 
     // role-specific refresh token - initialize if doesn't exist
     if (!user.refreshTokens) {
@@ -150,7 +150,7 @@ const refreshAccessToken = async (req, res) => {
       });
     }
 
-    const newRefreshToken = genrateRefreshToken(user);
+    const newRefreshToken = generateRefreshToken(user);
 
     user.refreshTokens = {
       ...user.refreshTokens,
@@ -162,7 +162,7 @@ const refreshAccessToken = async (req, res) => {
     res.cookie(`refreshToken_${role}`, newRefreshToken, refreshCookieOptions);
 
     res.json({
-      accessToken: genrateAccessToken(user),
+      accessToken: generateAccessToken(user),
       user: toClientUser(user),
     });
   } catch {

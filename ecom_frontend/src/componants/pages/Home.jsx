@@ -15,8 +15,7 @@ export default function Home() {
   const navigate = useNavigate();
 
   const activeSession = auth.user || auth.vendor || auth.admin;
-  const activeUser =
-    auth.admin || auth.vendor || auth.user;
+  const activeUser = auth.admin || auth.vendor || auth.user;
 
   const [active, setActive] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -45,7 +44,7 @@ export default function Home() {
 
     const res = await api.get("/api/cart/count", {
       headers: {
-        "x-role": "User",
+        role: "user",
       },
     });
 
@@ -95,7 +94,7 @@ export default function Home() {
       const cartitem = { productId };
       await api.post("/api/cart/add", cartitem, {
         headers: {
-          "x-role": "User",
+          role: "user",
         },
       }); // console.log("success", res.data);
       // alert("added to cart")
@@ -110,7 +109,7 @@ export default function Home() {
       const wishitem = { productId };
       const res = await api.post("/api/wishlist/add", wishitem, {
         headers: {
-          "x-role": "User",
+          role: "user",
         },
       });
       console.log("success", res.data);
@@ -152,7 +151,7 @@ export default function Home() {
     try {
       const res = await api.get("/api/cart", {
         headers: {
-          "x-role": "User",
+          role: "user",
         },
       });
 
@@ -166,7 +165,7 @@ export default function Home() {
     try {
       const res = await api.get("/api/wishlist", {
         headers: {
-          "x-role": "User",
+          role: "user",
         },
       });
 
@@ -392,7 +391,7 @@ export default function Home() {
                         {activeUser ? (
                           <>
                             <Link
-                              to={`/${activeSession?.user?.role?.toLowerCase() || ""}`}
+                              to={`/${activeUser.role.toLowerCase()}`}
                               className="block px-4 py-3 rounded-xl text-[#F5E6D3] hover:bg-[#332922]"
                             >
                               My Profile

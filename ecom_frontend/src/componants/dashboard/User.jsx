@@ -50,7 +50,7 @@ export default function User() {
 
       const config = {
         headers: {
-          "x-role": "User",
+          role: "user",
         },
       };
 
@@ -88,7 +88,7 @@ export default function User() {
 
       await api.patch("/api/auth/update", editData, {
         headers: {
-          "x-role": "User",
+          role: "user",
         },
       });
 

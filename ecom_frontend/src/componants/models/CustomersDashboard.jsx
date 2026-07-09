@@ -33,9 +33,9 @@ export default function CustomersDashboard() {
     try {
       setIsLoading(true);
 
-      const res = await api.get("/api/user/customers", {
+      const res = await api.get("/api/users/customers", {
         headers: {
-          "x-role": "Admin",
+          role: "admin",
         },
       });
 
@@ -52,9 +52,9 @@ export default function CustomersDashboard() {
       return;
 
     try {
-      await api.delete(`/api/user/${id}`, {
+      await api.delete(`/api/users/${id}`, {
         headers: {
-          "x-role": "Admin",
+          role: "admin",
         },
       });
 
@@ -77,9 +77,9 @@ export default function CustomersDashboard() {
 
   const handleUpdate = async (id) => {
     try {
-      const res = await api.patch(`/api/user/${id}`, editData, {
+      const res = await api.patch(`/api/users/${id}`, editData, {
         headers: {
-          "x-role": "Admin",
+          role: "admin",
         },
       });
       const updatedCustomer = res.data.data || res.data;

@@ -15,7 +15,7 @@ export default function Cart() {
       setError("");
       const res = await api.get("/api/cart", {
         headers: {
-          "x-role": "User",
+          role: "user",
         },
       });
       setCartItems(res.data.items || []);
@@ -40,10 +40,17 @@ export default function Cart() {
 
     try {
       setError("");
-      await api.put(`/api/cart/quantity/${itemId}`, {
-        quantity: newQuantity,
-        role: "User",
-      });
+      await api.put(
+        `/api/cart/quantity/${itemId}`,
+        {
+          quantity: newQuantity,
+        },
+        {
+          headers: {
+            role: "user",
+          },
+        },
+      );
 
       await fetchCartItems();
     } catch (err) {
@@ -62,7 +69,7 @@ export default function Cart() {
       setError("");
       await api.delete(`/api/cart/${itemId}`, {
         headers: {
-          "x-role": "User",
+          role: "user",
         },
       });
 
@@ -90,7 +97,6 @@ export default function Cart() {
 
     calculateTotal();
   }, [cartItems]);
-
 
   useEffect(() => {
     fetchCartItems();

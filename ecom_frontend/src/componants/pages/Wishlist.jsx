@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useRoleAPI } from "../utils/useRoleAPI";
+import useRoleAPI from "../utils/useRoleAPI";
 
 export default function Wishlist() {
   const [wishlistItems, setWishlistItems] = useState([]);

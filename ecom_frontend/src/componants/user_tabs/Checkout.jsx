@@ -47,7 +47,7 @@ export default function Checkout() {
     try {
       const res = await api.get("/api/cart", {
         headers: {
-          "x-role": "User",
+          role: "user",
         },
       });
 
@@ -61,7 +61,11 @@ export default function Checkout() {
 
   const fetchAddresses = async () => {
     try {
-      const res = await api.get("/api/address");
+      const res = await api.get("/api/address", {
+        headers: {
+          role: "user",
+        },
+      });
       setSavedAddresses(res.data || []);
 
       // Auto-select default address if available
@@ -120,22 +124,30 @@ export default function Checkout() {
 
       setPlacingOrder(true);
 
-      await api.post("/api/orders/create", {
-        items: cartItems.map((item) => ({
-          product: item.product._id,
-          quantity: item.quantity,
-        })),
+      await api.post(
+        "/api/order/create",
+        {
+          items: cartItems.map((item) => ({
+            product: item.product._id,
+            quantity: item.quantity,
+          })),
 
-        shippingAddress: {
-          ...shippingAddress,
-          fullName: form.fullName || "Customer",
-          phone: form.phone || "",
+          shippingAddress: {
+            ...shippingAddress,
+            fullName: form.fullName || "Customer",
+            phone: form.phone || "",
+          },
+
+          totalPrice,
+
+          paymentMethod: "COD",
         },
-
-        totalPrice,
-
-        paymentMethod: "COD",
-      });
+        {
+          headers: {
+            role: "user",
+          },
+        },
+      );
 
       alert("Order placed successfully");
 

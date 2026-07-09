@@ -13,7 +13,7 @@ export default function MyOrders() {
 
       const res = await api.get("/api/order/my", {
         headers: {
-          "x-role": "User",
+          role: "user",
         },
       });
 

@@ -24,7 +24,11 @@ export default function Address() {
   const fetchAddresses = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/api/address");
+      const res = await api.get("/api/address", {
+        headers: {
+          role: "user",
+        },
+      });
       setAddresses(res.data || []);
     } catch (error) {
       // Error fetching addresses
@@ -44,7 +48,12 @@ export default function Address() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.street || !formData.city || !formData.state || !formData.pincode) {
+    if (
+      !formData.street ||
+      !formData.city ||
+      !formData.state ||
+      !formData.pincode
+    ) {
       alert("Please fill in all required fields");
       return;
     }
@@ -54,11 +63,19 @@ export default function Address() {
 
       if (editingId) {
         // Update address
-        await api.put(`/address/${editingId}`, formData);
+        await api.put(`/api/address/${editingId}`, formData, {
+          headers: {
+            role: "user",
+          },
+        });
         alert("Address updated successfully");
       } else {
         // Create new address
-        await api.post("/api/address", formData);
+        await api.post("/api/address", formData, {
+          headers: {
+            role: "user",
+          },
+        });
         alert("Address added successfully");
       }
 
@@ -90,7 +107,11 @@ export default function Address() {
     if (window.confirm("Are you sure you want to delete this address?")) {
       try {
         setSaving(true);
-        await api.delete(`/api/address/${id}`);
+        await api.delete(`/api/address/${id}`, {
+          headers: {
+            role: "user",
+          },
+        });
         alert("Address deleted successfully");
         await fetchAddresses();
       } catch (error) {
@@ -104,7 +125,15 @@ export default function Address() {
   const handleSetDefault = async (id) => {
     try {
       setSaving(true);
-      await api.patch(`/api/address/default/${id}`);
+      await api.patch(
+        `/api/address/default/${id}`,
+        {},
+        {
+          headers: {
+            role: "user",
+          },
+        },
+      );
       await fetchAddresses();
     } catch (error) {
       alert(error?.response?.data?.message || "Failed to set default address");
@@ -145,7 +174,10 @@ export default function Address() {
           <h3 className="text-lg font-semibold mb-4">
             {editingId ? "Edit Address" : "Add New Address"}
           </h3>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form
+            onSubmit={handleSubmit}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          >
             <div className="md:col-span-2">
               <label className="block text-gray-700 text-sm font-medium mb-2">
                 Street Address *
@@ -237,7 +269,11 @@ export default function Address() {
                 disabled={saving}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition disabled:bg-gray-400"
               >
-                {saving ? "Saving..." : editingId ? "Update Address" : "Add Address"}
+                {saving
+                  ? "Saving..."
+                  : editingId
+                    ? "Update Address"
+                    : "Add Address"}
               </button>
               <button
                 type="button"
@@ -254,7 +290,9 @@ export default function Address() {
       {/* Addresses List */}
       <div>
         {loading ? (
-          <div className="text-center py-8 text-gray-500">Loading addresses...</div>
+          <div className="text-center py-8 text-gray-500">
+            Loading addresses...
+          </div>
         ) : addresses.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-8 text-center border border-gray-100">
             <p className="text-gray-500">No addresses saved yet</p>
@@ -268,7 +306,9 @@ export default function Address() {
               <div
                 key={address._id}
                 className={`bg-white rounded-xl shadow-sm p-5 border-2 transition ${
-                  address.isDefault ? "border-blue-500 bg-blue-50" : "border-gray-100"
+                  address.isDefault
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-100"
                 }`}
               >
                 <div className="flex justify-between items-start mb-3">
@@ -283,7 +323,9 @@ export default function Address() {
                         </span>
                       )}
                     </div>
-                    <p className="text-gray-700 text-sm mb-1">{address.street}</p>
+                    <p className="text-gray-700 text-sm mb-1">
+                      {address.street}
+                    </p>
                     <p className="text-gray-600 text-sm">
                       {address.city}, {address.state} - {address.pincode}
                     </p>

@@ -18,7 +18,7 @@ import ProductPage from "./componants/ProductDetails";
 
 import Cart from "./componants/pages/Cart";
 import Wishlist from "./componants/pages/Wishlist";
-import Checkout from "./componants/pages/Checkout";
+import Checkout from "./componants/user_tabs/Checkout";
 
 // import MultiRoleTestingGuide from "./componants/pages/MultiRoleTestingGuide";
 

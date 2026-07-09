@@ -1,76 +1,3 @@
-// import axios from "axios";
-
-// const api = axios.create({
-//   baseURL: "http://localhost:5000",
-//   withCredentials: true,
-// });
-
-// // REQUEST INTERCEPTOR
-// api.interceptors.request.use((config) => {
-//   const role = config.headers?.["x-role"];
-
-//   if (role) {
-//     const token = localStorage.getItem(`accessToken_${role}`);
-
-//     if (token) {
-//       config.headers.Authorization = `Bearer ${token}`;
-//     }
-//   }
-
-//   return config;
-// });
-
-// // RESPONSE INTERCEPTOR
-// api.interceptors.response.use(
-//   (response) => response,
-
-//   async (error) => {
-//     const originalRequest = error.config;
-
-//     if (
-//       error.response?.status === 401 &&
-//       !originalRequest._retry &&
-//       !originalRequest.url?.includes("/api/auth/")
-//     ) {
-//       originalRequest._retry = true;
-
-//       const role = originalRequest.headers?.["x-role"];
-
-//       if (!role) {
-//         return Promise.reject(error);
-//       }
-
-//       try {
-//         const refreshRes = await api.post(
-//           "/api/auth/refresh",
-//           { role },
-//           {
-//             headers: {
-//               "x-role": role,
-//             },
-//           },
-//         );
-
-//         const newAccessToken = refreshRes.data.accessToken;
-
-//         localStorage.setItem(`accessToken_${role}`, newAccessToken);
-
-//         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
-//         return api(originalRequest);
-//       } catch (refreshError) {
-//         localStorage.removeItem(`accessToken_${role}`);
-
-//         return Promise.reject(refreshError);
-//       }
-//     }
-
-//     return Promise.reject(error);
-//   },
-// );
-
-// export default api;
-
 import axios from "axios";
 
 const api = axios.create({
@@ -78,21 +5,98 @@ const api = axios.create({
   withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
-  const auth = JSON.parse(localStorage.getItem("multi_auth"));
+// -----------------------------
+// Request Interceptor
+// -----------------------------
 
-  const role = config.headers.role;
+api.interceptors.request.use(
+  (config) => {
+    const auth = JSON.parse(localStorage.getItem("multi_auth")) || {};
 
-  if (role === "User" && auth?.userToken) {
-    config.headers.Authorization = `Bearer ${auth.userToken}`;
-  }
-  if (role === "Vendor" && auth?.vendorToken) {
-    config.headers.Authorization = `Bearer ${auth.vendorToken}`;
-  }
-  if (role === "Admin" && auth?.adminToken) {
-    config.headers.Authorization = `Bearer ${auth.adminToken}`;
-  }
-  return config;
-});
+    // Read either header name
+    let role = config.headers?.role || config.headers?.["x-role"];
+
+    if (role) {
+      role = role.toLowerCase();
+
+      const token = auth[`${role}Token`];
+
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
+
+// -----------------------------
+// Response Interceptor
+// -----------------------------
+
+api.interceptors.response.use(
+  (response) => response,
+
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (
+      error.response?.status !== 401 ||
+      originalRequest._retry ||
+      originalRequest.url.includes("/api/auth/")
+    ) {
+      return Promise.reject(error);
+    }
+
+    originalRequest._retry = true;
+
+    let role =
+      originalRequest.headers?.role || originalRequest.headers?.["x-role"];
+
+    if (!role) {
+      return Promise.reject(error);
+    }
+
+    role = role.toLowerCase();
+    
+    if (!role) {
+      return Promise.reject(error);
+    }
+
+    try {
+      const refresh = await api.post(
+        "/api/auth/refresh",
+        {
+          role: role.charAt(0).toUpperCase() + role.slice(1),
+        },
+        {
+          headers: {
+            role,
+          },
+        },
+      );
+
+      const auth = JSON.parse(localStorage.getItem("multi_auth")) || {};
+
+      auth[`${role}Token`] = refresh.data.accessToken;
+
+      localStorage.setItem("multi_auth", JSON.stringify(auth));
+
+      originalRequest.headers.Authorization = `Bearer ${refresh.data.accessToken}`;
+
+      return api(originalRequest);
+    } catch (err) {
+      const auth = JSON.parse(localStorage.getItem("multi_auth")) || {};
+
+      auth[role] = null;
+      auth[`${role}Token`] = null;
+
+      localStorage.setItem("multi_auth", JSON.stringify(auth));
+
+      return Promise.reject(err);
+    }
+  },
+);
 
 export default api;

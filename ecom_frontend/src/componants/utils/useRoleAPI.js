@@ -1,62 +1,44 @@
 import { useCallback } from "react";
-import { useLocation } from "react-router-dom";
 import api from "../api/axios";
 
-/**
- * Hook to make role-scoped API calls
- * Automatically adds the role header based on current route
- * Usage: const { get, post, put, delete } = useRoleAPI();
- */
-export const useRoleAPI = () => {
-  const location = useLocation();
+export default function useRoleAPI() {
+  const auth = JSON.parse(localStorage.getItem("multi_auth")) || {};
 
-  // Determine role from current route
-  const getCurrentRole = useCallback(() => {
-    const path = location.pathname;
-    if (path.startsWith("/admin")) return "admin";
-    if (path.startsWith("/vendor")) return "vendor";
-    if (path.startsWith("/user")) return "user";
-    return null;
-  }, [location.pathname]);
+  let role = null;
 
-  const makeRequest = useCallback(
-    async (method, url, data, config = {}) => {
-      const role = getCurrentRole();
-      const headers = {
-        ...config.headers,
-        role,
-      };
+  if (auth.user) {
+    role = "user";
+  } else if (auth.vendor) {
+    role = "vendor";
+  } else if (auth.admin) {
+    role = "admin";
+  }
+
+  const request = useCallback(
+    (method, url, data = null, config = {}) => {
       return api({
         method,
         url,
         data,
         ...config,
-        headers,
+        headers: {
+          ...config.headers,
+          role,
+        },
       });
     },
-    [getCurrentRole]
+    [role]
   );
 
   return {
-    get: useCallback(
-      (url, config) => makeRequest("GET", url, undefined, config),
-      [makeRequest]
-    ),
-    post: useCallback(
-      (url, data, config) => makeRequest("POST", url, data, config),
-      [makeRequest]
-    ),
-    put: useCallback(
-      (url, data, config) => makeRequest("PUT", url, data, config),
-      [makeRequest]
-    ),
-    delete: useCallback(
-      (url, config) => makeRequest("DELETE", url, undefined, config),
-      [makeRequest]
-    ),
-    patch: useCallback(
-      (url, data, config) => makeRequest("PATCH", url, data, config),
-      [makeRequest]
-    ),
+    get: (url, config) => request("GET", url, null, config),
+
+    post: (url, data, config) => request("POST", url, data, config),
+
+    put: (url, data, config) => request("PUT", url, data, config),
+
+    patch: (url, data, config) => request("PATCH", url, data, config),
+
+    delete: (url, config) => request("DELETE", url, null, config),
   };
-};
+}

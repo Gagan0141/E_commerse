@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../utils/Auth";
-import { useRoleAPI } from "../utils/useRoleAPI";
+import useRoleAPI from "../utils/useRoleAPI";
 
 export default function Productsdashboard() {
   // All state declarations at the top
@@ -26,7 +26,7 @@ export default function Productsdashboard() {
 
   const fetchCategories = async () => {
     try {
-      const res = await get("/api/category");
+      const res = await get("/api/cat");
 
       setcategory(res.data || []);
     } catch (error) {
@@ -99,7 +99,7 @@ export default function Productsdashboard() {
   // Filter first
   const filteredProducts = products.filter(
     (p) =>
-      (typeof p.seller === "object" ? p.seller?._id : p.seller) === user?._id ||
+      (typeof p.seller === "object" ? p.seller?._id : p.seller) === user?.id ||
       user?.role === "Admin",
   );
 

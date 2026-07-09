@@ -1,29 +1,28 @@
-export const getStoredAuth = () => {
-  const data = localStorage.getItem("multi_auth");
-  return data ? JSON.parse(data) : null;
-};
+const STORAGE_KEY = "multi_auth";
 
-export const setStoredAuth = (data) => {
-  localStorage.setItem("multi_auth", JSON.stringify(data));
-};
+export function getStoredAuth() {
+  const data = localStorage.getItem(STORAGE_KEY);
 
-export const clearStoredAuthByRole = (role) => {
-  const data = getStoredAuth();
+  if (!data) return null;
 
-  if (!data) return;
+  return JSON.parse(data);
+}
 
-  //copy
-  const updatedData = { ...data };
-  delete updatedData[role];
+export function setStoredAuth(auth) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(auth));
+}
 
-  //test for clear all
-  if (Object.keys(updatedData).length === 0) {
-    return clearStoredAuth();
-  }
+export function clearStoredAuth() {
+  localStorage.removeItem(STORAGE_KEY);
+}
 
-  localStorage.setItem("multi_auth", JSON.stringify(updatedData));
-};
+export function clearStoredAuthByRole(role) {
+  const auth = getStoredAuth();
 
-export const clearStoredAuth = () => {
-  localStorage.removeItem("multi_auth");
-};
+  if (!auth) return;
+
+  auth[role] = null;
+  auth[`${role}Token`] = null;
+
+  setStoredAuth(auth);
+}

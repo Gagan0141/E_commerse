@@ -242,9 +242,9 @@ export default function Signup() {
                 onChange={(e) => setForm({ ...form, role: e.target.value })}
                 className="w-full px-4 py-3 rounded-xl border border-[#5C4635] bg-[#1C1917] text-[#F5E6D3] outline-none focus:border-[#C2A878] transition"
               >
-                <option>Choose role</option>
-                <option>User</option>
-                <option>Vendor</option>
+                <option value="">Choose role</option>
+                <option value="User">User</option>
+                <option value="Vendor">Vendor</option>
               </select>
             </div>
 

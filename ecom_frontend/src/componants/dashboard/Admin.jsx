@@ -16,6 +16,8 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState("orders");
   const [loading, setloading] = useState(false);
 
+  const [refreshNav, setRefreshNav] = useState(false);
+
   const { auth, logoutRole } = useAuth();
 
   const user = auth.admin;
@@ -55,12 +57,13 @@ export default function Admin() {
     try {
       const config = {
         headers: {
-          "x-role": "Admin",
+          role: "admin",
         },
       };
 
       if (activeModal === "nav") {
         const response = await api.post("/api/nav/add", form, config);
+        setRefreshNav((prev) => !prev);
       }
 
       if (activeModal === "cat") {
@@ -264,7 +267,7 @@ export default function Admin() {
                   </div>
 
                   <div className="rounded-2xl border border-slate-200 p-4 bg-white overflow-x-auto">
-                    <NavItemsDashboard />
+                    <NavItemsDashboard refresh={refreshNav} />
                   </div>
                 </div>
               )}

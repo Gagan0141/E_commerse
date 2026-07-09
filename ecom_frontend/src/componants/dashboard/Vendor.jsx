@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
-import api from "../api/axios";
+import useRoleAPI from "../utils/useRoleAPI";
 import ProductModal from "../models/AddProductModel";
 import { useAuth } from "../utils/Auth";
 import Productsdashboard from "../models/ProductsDashboard";
+import { Link } from "react-router-dom";
 
 export default function Vendor() {
   const [activeModal, setactiveModal] = useState(null);
   const { auth, logoutRole } = useAuth();
+  const { post } = useRoleAPI();
 
   const user = auth.vendor;
 
@@ -32,11 +34,7 @@ export default function Vendor() {
     setloading(true);
     try {
       if (activeModal === "product") {
-        const res = await api.post("/api/product/add", form, {
-          headers: {
-            "x-role": "Vendor",
-          },
-        });
+        await post("/api/product/add", form);
         setactiveModal(null);
       }
     } catch (err) {
@@ -91,12 +89,12 @@ export default function Vendor() {
               <p className="font-medium text-gray-800">
                 Hello, {user?.name || "Vendor"}
               </p>
-              <a
-                href={"/"}
+              <Link
+                to={"/"}
                 className="w-full bg-gray-600 text-white text-center rounded-xl shadow-sm px-4 py-2 hover:bg-green-500"
               >
                 <b>Home</b>
-              </a>
+              </Link>
               <p className="text-sm text-gray-500">Manage your store</p>
             </div>
           </div>

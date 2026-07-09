@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import api from "../api/axios";
 import { useAuth } from "../utils/Auth";
 
-export default function NavItemsDashboard() {
+export default function NavItemsDashboard({ refresh }) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -27,7 +27,7 @@ export default function NavItemsDashboard() {
       setLoading(true);
       const res = await api.get("/api/nav", {
         headers: {
-          "x-role": "Admin",
+          role: "admin",
         },
       });
       setNavItems(res.data);
@@ -40,9 +40,9 @@ export default function NavItemsDashboard() {
 
   const fetchCategories = async () => {
     try {
-      const res = await api.get("/api/category", {
+      const res = await api.get("/api/cat", {
         headers: {
-          "x-role": "Admin",
+          role: "admin",
         },
       });
       setCategories(res.data);
@@ -55,7 +55,7 @@ export default function NavItemsDashboard() {
     try {
       await api.delete(`/api/nav/${id}`, {
         headers: {
-          "x-role": "Admin",
+          role: "admin",
         },
       });
       setNavItems((prev) => prev.filter((item) => item._id !== id));
@@ -84,7 +84,7 @@ export default function NavItemsDashboard() {
 
       const res = await api.patch(`/api/nav/${id}`, editData, {
         headers: {
-          "x-role": "Admin",
+          role: "admin",
         },
       });
       setNavItems((prev) =>
@@ -102,6 +102,9 @@ export default function NavItemsDashboard() {
 
   useEffect(() => {
     fetchItems();
+  }, [refresh]);
+
+  useEffect(() => {
     fetchCategories();
   }, []);
 

@@ -36,7 +36,7 @@ export default function CategoriesDashboard() {
     try {
       await api.delete(`/api/cat/${id}`, {
         headers: {
-          "x-role": "Admin",
+          role: "admin",
         },
       });
       setCategories((prev) => prev.filter((item) => item._id !== id));
@@ -61,9 +61,9 @@ export default function CategoriesDashboard() {
     try {
       setSaving(true);
 
-      const res = await api.patch(`/api/category/${id}`, editData, {
+      const res = await api.patch(`/api/cat/${id}`, editData, {
         headers: {
-          "x-role": "Admin",
+          role: "admin",
         },
       });
       setCategories((prev) =>
