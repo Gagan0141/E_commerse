@@ -1,10 +1,8 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet} from "react-router-dom";
 import { useAuth } from "./Auth";
 
 export default function PrivateRoutes({ allowedRoles = [] }) {
   const { auth, isInitialized } = useAuth();
-
-  const location = useLocation();
 
   if (!isInitialized) {
     return null;

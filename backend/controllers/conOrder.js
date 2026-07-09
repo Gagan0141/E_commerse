@@ -86,8 +86,24 @@ const getAllOrders = async (req, res) => {
   }
 };
 
-const approveOrder = async (req, res) => {
+const updateOrderStatus = async (req, res) => {
   try {
+    const { status } = req.body;
+
+    const validStatuses = [
+      "pending",
+      "approved",
+      "rejected",
+      "shipped",
+      "delivered",
+    ];
+
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid order status",
+      });
+    }
+
     const order = await Order.findById(req.params.id).populate("items.product");
 
     if (!order) {
@@ -96,26 +112,33 @@ const approveOrder = async (req, res) => {
       });
     }
 
-    for (const item of order.items) {
-      const product = await Product.findById(item.product._id);
+    // Reduce stock only once when approving
+    if (status === "approved" && order.status !== "approved") {
+      for (const item of order.items) {
+        const product = await Product.findById(item.product._id);
 
-      if (product.stock < item.quantity) {
-        return res.status(400).json({
-          message: `${product.title} is out of stock`,
-        });
+        if (!product) {
+          return res.status(404).json({
+            message: "Product not found",
+          });
+        }
+
+        if (product.stock < item.quantity) {
+          return res.status(400).json({
+            message: `${product.title} is out of stock`,
+          });
+        }
+
+        product.stock -= item.quantity;
+        await product.save();
       }
-
-      product.stock -= item.quantity;
-
-      await product.save();
     }
 
-    order.status = "approved";
-
+    order.status = status;
     await order.save();
 
     res.json({
-      message: "Order approved",
+      message: `Order ${status} successfully`,
       order,
     });
   } catch (err) {
@@ -128,6 +151,6 @@ const approveOrder = async (req, res) => {
 module.exports = {
   createOrder,
   getAllOrders,
-  approveOrder,
+  updateOrderStatus,
   getMyOrders,
 };

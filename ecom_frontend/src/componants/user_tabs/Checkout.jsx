@@ -5,43 +5,33 @@ import { useNavigate, Link } from "react-router-dom";
 export default function Checkout() {
   const navigate = useNavigate();
 
+  const [user, setUser] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [savedAddresses, setSavedAddresses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [placingOrder, setPlacingOrder] = useState(false);
-  const [orderError, setOrderError] = useState("");
-  const [useNewAddress, setUseNewAddress] = useState(true);
-  const [selectedAddressId, setSelectedAddressId] = useState(null);
 
-  const [form, setForm] = useState({
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [useNewAddress, setUseNewAddress] = useState(true);
+  const [isGift, setIsGift] = useState(false);
+
+  const [giftInfo, setGiftInfo] = useState({
     fullName: "",
     phone: "",
+  });
+  const [form, setForm] = useState({
     address: "",
     city: "",
     state: "",
     pincode: "",
   });
 
-  const [totalPrice, setTotalPrice] = useState(0);
-
-  useEffect(() => {
-    fetchCart();
-    fetchAddresses();
-  }, []);
-
-  useEffect(() => {
-    let total = 0;
-
-    cartItems.forEach((item) => {
-      const price = item.product.discountPercentage
-        ? item.product.price * (1 - item.product.discountPercentage / 100)
-        : item.product.price;
-
-      total += price * item.quantity;
-    });
-
-    setTotalPrice(total);
-  }, [cartItems]);
+  const fetchUser = async () => {
+    try {
+      const res = await api.get("/api/auth/me", { headers: { role: "user" } });
+      setUser(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchCart = async () => {
     try {
@@ -50,10 +40,9 @@ export default function Checkout() {
           role: "user",
         },
       });
-
       setCartItems(res.data.items || []);
     } catch (error) {
-      // Error handled
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -75,55 +64,67 @@ export default function Checkout() {
         setUseNewAddress(false);
       }
     } catch (error) {
-      // Error fetching addresses - handled
+      console.error(error);
     }
   };
 
+  const [loading, setLoading] = useState(true);
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [orderError, setOrderError] = useState("");
+  const [totalPrice, setTotalPrice] = useState(0);
+
+  useEffect(() => {
+    fetchUser();
+    fetchCart();
+    fetchAddresses();
+  }, []);
+
+  useEffect(() => {
+    let total = 0;
+
+    cartItems.forEach((item) => {
+      const price = item.product.discountPercentage
+        ? item.product.price * (1 - item.product.discountPercentage / 100)
+        : item.product.price;
+
+      total += price * item.quantity;
+    });
+
+    setTotalPrice(total);
+  }, [cartItems]);
+
   const getAddressForOrder = () => {
-    if (!useNewAddress && selectedAddressId) {
-      const selected = savedAddresses.find(
-        (addr) => addr._id === selectedAddressId,
-      );
-      if (selected) {
-        return {
-          address: selected.street,
-          city: selected.city,
-          state: selected.state,
-          pincode: selected.pincode,
-          type: selected.type,
-          fullName: selected.fullName || form.fullName,
-          phone: selected.phone || form.phone,
-        };
-      }
+    if (!useNewAddress) {
+      return savedAddresses.find((a) => a._id === selectedAddressId);
     }
-    return form;
+
+    return {
+      street: form.address,
+      city: form.city,
+      state: form.state,
+      pincode: form.pincode,
+    };
   };
 
   const placeOrder = async () => {
+    const address = getAddressForOrder();
+    if (
+      !address.street ||
+      !address.city ||
+      !address.state ||
+      !address.pincode
+    ) {
+      setOrderError("Please provide a valid shipping address");
+      return;
+    }
+
+    if (isGift && (!giftInfo.fullName || !giftInfo.phone)) {
+      setOrderError("Please enter recipient details");
+      return;
+    }
+
     try {
-      setOrderError("");
-
-      const shippingAddress = getAddressForOrder();
-
-      if (
-        !shippingAddress.address ||
-        !shippingAddress.city ||
-        !shippingAddress.state ||
-        !shippingAddress.pincode
-      ) {
-        setOrderError("Please provide valid shipping address");
-        return;
-      }
-
-      if (useNewAddress) {
-        if (!form.fullName || !form.phone) {
-          setOrderError("Please enter name and phone");
-          return;
-        }
-      }
-
       setPlacingOrder(true);
-
       await api.post(
         "/api/order/create",
         {
@@ -133,27 +134,20 @@ export default function Checkout() {
           })),
 
           shippingAddress: {
-            ...shippingAddress,
-            fullName: form.fullName || "Customer",
-            phone: form.phone || "",
+            ...address,
+            fullName: isGift ? giftInfo.fullName : user.name,
+            phone: isGift ? giftInfo.phone : user.phone,
           },
 
           totalPrice,
 
           paymentMethod: "COD",
         },
-        {
-          headers: {
-            role: "user",
-          },
-        },
+        { headers: { role: "user" } },
       );
-
-      alert("Order placed successfully");
-
       navigate("/");
-    } catch (error) {
-      setOrderError(error.response?.data?.message || "Failed to place order");
+    } catch (err) {
+      setOrderError(err.response?.data?.message || "Failed to place order");
     } finally {
       setPlacingOrder(false);
     }
@@ -258,44 +252,69 @@ export default function Checkout() {
                   {useNewAddress ? "✓ Use New Address" : "Use New Address"}
                 </button>
 
+                <label className="flex items-center gap-2 mb-4">
+                  <input
+                    type="checkbox"
+                    checked={isGift}
+                    onChange={(e) => setIsGift(e.target.checked)}
+                  />
+                  <span>Send as a gift to someone else</span>
+                </label>
                 {useNewAddress && (
                   <div>
                     <h3 className="text-lg font-semibold mb-4">
                       Enter Shipping Details
                     </h3>
+                    {isGift && (
+                      <div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <input
+                            type="text"
+                            name="fullName"
+                            value={giftInfo.fullName}
+                            onChange={(e) =>
+                              setGiftInfo((prev) => ({
+                                ...prev,
+                                fullName: e.target.value,
+                              }))
+                            }
+                            placeholder="Recipient Name"
+                            className="
+                          bg-[#1C1917]
+                          border border-[#5C4635]
+                          rounded-xl
+                          px-4 py-4
+                          outline-none
+                          focus:border-[#8B5E3C]
+                          md:col-span-2
+                        "
+                          />
+                          <input
+                            type="text"
+                            name="phone"
+                            value={giftInfo.phone}
+                            onChange={(e) =>
+                              setGiftInfo((prev) => ({
+                                ...prev,
+                                phone: e.target.value,
+                              }))
+                            }
+                            placeholder="Phone Number"
+                            className="
+                          bg-[#1C1917]
+                          border border-[#5C4635]
+                          rounded-xl
+                          px-4 py-4
+                          outline-none
+                          focus:border-[#8B5E3C]
+                          md:col-span-2
+                          mb-5
+                        "
+                          />
+                        </div>
+                      </div>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <input
-                        type="text"
-                        name="fullName"
-                        value={form.fullName}
-                        onChange={handleChange}
-                        placeholder="Full Name"
-                        className="
-                          bg-[#1C1917]
-                          border border-[#5C4635]
-                          rounded-xl
-                          px-4 py-4
-                          outline-none
-                          focus:border-[#8B5E3C]
-                          md:col-span-2
-                        "
-                      />
-                      <input
-                        type="text"
-                        name="phone"
-                        value={form.phone}
-                        onChange={handleChange}
-                        placeholder="Phone Number"
-                        className="
-                          bg-[#1C1917]
-                          border border-[#5C4635]
-                          rounded-xl
-                          px-4 py-4
-                          outline-none
-                          focus:border-[#8B5E3C]
-                          md:col-span-2
-                        "
-                      />
                       <input
                         type="text"
                         name="address"
@@ -303,14 +322,14 @@ export default function Checkout() {
                         onChange={handleChange}
                         placeholder="Street Address"
                         className="
-                          bg-[#1C1917]
-                          border border-[#5C4635]
-                          rounded-xl
-                          px-4 py-4
-                          outline-none
-                          focus:border-[#8B5E3C]
-                          md:col-span-2
-                        "
+                    bg-[#1C1917]
+                    border border-[#5C4635]
+                    rounded-xl
+                    px-4 py-4
+                    outline-none
+                    focus:border-[#8B5E3C]
+                    md:col-span-2
+                  "
                       />
                       <input
                         type="text"
@@ -319,13 +338,13 @@ export default function Checkout() {
                         onChange={handleChange}
                         placeholder="City"
                         className="
-                          bg-[#1C1917]
-                          border border-[#5C4635]
-                          rounded-xl
-                          px-4 py-4
-                          outline-none
-                          focus:border-[#8B5E3C]
-                        "
+                    bg-[#1C1917]
+                    border border-[#5C4635]
+                    rounded-xl
+                    px-4 py-4
+                    outline-none
+                    focus:border-[#8B5E3C]
+                  "
                       />
                       <input
                         type="text"
@@ -334,13 +353,13 @@ export default function Checkout() {
                         onChange={handleChange}
                         placeholder="State"
                         className="
-                          bg-[#1C1917]
-                          border border-[#5C4635]
-                          rounded-xl
-                          px-4 py-4
-                          outline-none
-                          focus:border-[#8B5E3C]
-                        "
+                    bg-[#1C1917]
+                    border border-[#5C4635]
+                    rounded-xl
+                    px-4 py-4
+                    outline-none
+                    focus:border-[#8B5E3C]
+                  "
                       />
                       <input
                         type="text"
@@ -349,13 +368,13 @@ export default function Checkout() {
                         onChange={handleChange}
                         placeholder="Pincode"
                         className="
-                          bg-[#1C1917]
-                          border border-[#5C4635]
-                          rounded-xl
-                          px-4 py-4
-                          outline-none
-                          focus:border-[#8B5E3C]
-                        "
+                    bg-[#1C1917]
+                    border border-[#5C4635]
+                    rounded-xl
+                    px-4 py-4
+                    outline-none
+                    focus:border-[#8B5E3C]
+                  "
                       />
                     </div>
                   </div>

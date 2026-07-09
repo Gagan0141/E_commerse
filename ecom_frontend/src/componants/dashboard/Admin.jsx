@@ -10,6 +10,7 @@ import CategoriesDashboard from "../models/CategoriesDashboard";
 import CustomersDashboard from "../models/CustomersDashboard";
 import VendorsDashboard from "../models/VendorsDashboard";
 import Orders from "../admin_tabs/Orders";
+import AdminDashboard from "../models/AdminDashboard"
 
 export default function Admin() {
   const [activeModal, setactiveModal] = useState(null);
@@ -278,7 +279,7 @@ export default function Admin() {
                     Overview
                   </h2>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                  {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     {["Revenue", "Orders", "Customers", "Conversion"].map(
                       (kpi) => (
                         <div
@@ -292,7 +293,8 @@ export default function Admin() {
                         </div>
                       ),
                     )}
-                  </div>
+                  </div> */}
+                  <AdminDashboard/>
                 </div>
               )}
               {/* PRODUCTS */}

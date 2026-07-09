@@ -6,6 +6,9 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [approvingId, setApprovingId] = useState(null);
+  const [selectedstatus, setSelectedstatus] = useState("pending");
+
+  const statuses = ["pending", "approved", "rejected", "shipped", "delivered"];
 
   const fetchOrders = async () => {
     try {
@@ -29,23 +32,29 @@ export default function Orders() {
     fetchOrders();
   }, []);
 
-  const approveOrder = async (id) => {
+  const updateStatus = async (id, status) => {
     try {
-      setApprovingId(id);
-
-      await api.put(`/api/order/approve/${id}`);
+      await api.put(
+        `/api/order/status/${id}`,
+        { status },
+        {
+          headers: {
+            role: "admin",
+          },
+        },
+      );
 
       setOrders((prev) =>
-        prev.map((order) =>
-          order._id === id ? { ...order, status: "approved" } : order,
-        ),
+        prev.map((order) => (order._id === id ? { ...order, status } : order)),
       );
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to approve order");
-    } finally {
-      setApprovingId(null);
+      setError(err.response?.data?.message || "Failed to update order");
     }
   };
+
+  const filteredOrders = orders.filter(
+    (order) => order.status === selectedstatus,
+  );
 
   if (loading) {
     return (
@@ -88,6 +97,26 @@ export default function Orders() {
           </div>
         </div>
 
+        <div className="flex flex-wrap gap-3 mb-8">
+          {statuses.map((status) => (
+            <button
+              key={status}
+              onClick={() => setSelectedstatus(status)}
+              className={`px-5 py-3 rounded-xl border transition-all capitalize
+        ${
+          selectedstatus === status
+            ? "bg-[#8B5E3C] border-[#8B5E3C] text-white"
+            : "bg-[#2C241F] border-[#5C4635] text-[#C2A878] hover:border-[#8B5E3C]"
+        }
+      `}
+            >
+              {status}
+              <span className="ml-2 text-xs">
+                ({orders.filter((o) => o.status === status).length})
+              </span>
+            </button>
+          ))}
+        </div>
         {/* Error */}
         {error && (
           <div className="mb-8 bg-red-500/10 border border-red-500/30 rounded-2xl p-5 text-red-300">
@@ -96,19 +125,19 @@ export default function Orders() {
         )}
 
         {/* Empty */}
-        {!orders.length ? (
+        {!filteredOrders.length ? (
           <div className="bg-[#2C241F] border border-[#5C4635] rounded-3xl p-16 text-center">
             <div className="text-6xl mb-6">📦</div>
 
             <h2 className="text-3xl font-serif mb-3">No Orders Yet</h2>
 
             <p className="text-[#C2A878]/70">
-              Customer orders will appear here.
+              No {selectedstatus} orders found.
             </p>
           </div>
         ) : (
           <div className="space-y-10">
-            {orders.map((order) => (
+            {filteredOrders.map((order) => (
               <div
                 key={order._id}
                 className="
@@ -141,13 +170,19 @@ export default function Orders() {
                     <div className="flex flex-wrap items-center gap-4">
                       <div
                         className={`
-                        px-5 py-3 rounded-2xl text-sm font-semibold uppercase tracking-wide
-                        ${
-                          order.status === "approved"
-                            ? "bg-green-500/15 text-green-300 border border-green-500/30"
-                            : "bg-yellow-500/15 text-yellow-300 border border-yellow-500/30"
-                        }
-                      `}
+  px-5 py-3 rounded-2xl text-sm font-semibold uppercase tracking-wide
+  ${
+    order.status === "pending"
+      ? "bg-yellow-500/15 text-yellow-300 border border-yellow-500/30"
+      : order.status === "approved"
+        ? "bg-green-500/15 text-green-300 border border-green-500/30"
+        : order.status === "rejected"
+          ? "bg-red-500/15 text-red-300 border border-red-500/30"
+          : order.status === "shipped"
+            ? "bg-blue-500/15 text-blue-300 border border-blue-500/30"
+            : "bg-purple-500/15 text-purple-300 border border-purple-500/30"
+  }
+`}
                       >
                         {order.status}
                       </div>
@@ -163,9 +198,48 @@ export default function Orders() {
                       </div>
 
                       {order.status === "pending" && (
+                        <>
+                          <button
+                            onClick={() => updateStatus(order._id, "approved")}
+                            className="
+                            px-6 py-4 rounded-2xl
+                            bg-gradient-to-r
+                            from-green-700
+                            to-green-600
+                            hover:from-green-600
+                            hover:to-green-500
+                            transition-all duration-300
+                            font-medium
+                            shadow-lg
+                            hover:scale-[1.02]
+                            text-green-400
+                          "
+                          >
+                            Approve
+                          </button>
+
+                          <button
+                            onClick={() => updateStatus(order._id, "rejected")}
+                            className="
+                          px-6 py-4 rounded-2xl
+                          bg-gradient-to-r
+                          from-[#8B5E3C]
+                          to-[#6F4A2F]
+                          hover:scale-[1.02]
+                          transition-all duration-300
+                          font-medium
+                          shadow-lg
+                          disabled:opacity-50
+                        "
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
+
+                      {order.status === "approved" && (
                         <button
-                          onClick={() => approveOrder(order._id)}
-                          disabled={approvingId === order._id}
+                          onClick={() => updateStatus(order._id, "shipped")}
                           className="
                           px-6 py-4 rounded-2xl
                           bg-gradient-to-r
@@ -178,9 +252,26 @@ export default function Orders() {
                           disabled:opacity-50
                         "
                         >
-                          {approvingId === order._id
-                            ? "Approving..."
-                            : "Approve Order"}
+                          Ship
+                        </button>
+                      )}
+
+                      {order.status === "shipped" && (
+                        <button
+                          onClick={() => updateStatus(order._id, "delivered")}
+                          className="
+                          px-6 py-4 rounded-2xl
+                          bg-gradient-to-r
+                          from-[#8B5E3C]
+                          to-[#6F4A2F]
+                          hover:scale-[1.02]
+                          transition-all duration-300
+                          font-medium
+                          shadow-lg
+                          disabled:opacity-50
+                        "
+                        >
+                          Deliver
                         </button>
                       )}
                     </div>

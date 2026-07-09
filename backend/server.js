@@ -23,6 +23,7 @@ const wishlistRoute = require("./routes/rouWishlist");
 const cartRoute = require("./routes/rouCart");
 const routeAddress = require("./routes/routeAddress");
 const orderRoute = require("./routes/rouOrder");
+const adminDashboardRoutes = require("./routes/rouAdminDashboard");
 
 // const app = express();
 const port = 5000;
@@ -30,11 +31,14 @@ mongodb();
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ 
-  origin: ["http://localhost:3000", "http://localhost:3000"], 
-  credentials: true 
-}));
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "http://localhost:3000"],
+    credentials: true,
+  }),
+);
 
+app.use("/api/admin", adminDashboardRoutes);
 app.use("/api/nav", navRoute);
 app.use("/api/cat", acatRoute);
 

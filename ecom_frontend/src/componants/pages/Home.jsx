@@ -9,12 +9,12 @@ import api from "../api/axios";
 import Crousel from "../navbar/Crousel";
 
 export default function Home() {
-  const { auth, loginRole, logoutRole } = useAuth();
+  const { auth, logoutRole } = useAuth();
 
   const user = auth.user;
   const navigate = useNavigate();
 
-  const activeSession = auth.user || auth.vendor || auth.admin;
+  // const activeSession = auth.user || auth.vendor || auth.admin;
   const activeUser = auth.admin || auth.vendor || auth.user;
 
   const [active, setActive] = useState(null);

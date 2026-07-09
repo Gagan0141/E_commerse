@@ -5,8 +5,8 @@ const router = express.Router();
 const {
   createOrder,
   getAllOrders,
-  approveOrder,
   getMyOrders,
+  updateOrderStatus,
 } = require("../controllers/conOrder");
 
 const { verifyAccessToken } = require("../middleware/verifyToken");
@@ -20,6 +20,11 @@ router.get("/my", verifyAccessToken, authRoles("User"), getMyOrders);
 //admin
 router.get("/", verifyAccessToken, authRoles("Admin"), getAllOrders);
 
-router.put("/approve/:id", verifyAccessToken, authRoles("Admin"), approveOrder);
+router.put(
+  "/status/:id",
+  verifyAccessToken,
+  authRoles("Admin"),
+  updateOrderStatus,
+);
 
 module.exports = router;

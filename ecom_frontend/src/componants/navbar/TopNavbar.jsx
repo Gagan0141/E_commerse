@@ -11,7 +11,7 @@ import api from "../api/axios";
 export default function TopNavbar() {
   const { logoutRole, auth } = useAuth();
 
-  const user = auth.user;
+  // const user = auth.user;
 
   const activeUser =
     auth.user || auth.vendor || auth.admin;

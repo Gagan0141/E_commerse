@@ -16,9 +16,9 @@ import {
 } from "react-icons/fa";
 
 export default function VendorsDashboard() {
-  const { auth } = useAuth();
+  // const { auth } = useAuth();
 
-  const user = auth.admin || auth.vendor;
+  // const user = auth.admin || auth.vendor;
 
   const [vendors, setVendors] = useState([]);
   const [editId, setEditId] = useState(null);
